@@ -1,76 +1,102 @@
 "use client";
 
-import { type ReactNode, createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { toast } from "sonner";
+import { useSession, signOut as betterSignOut, signIn as betterSignIn, signUp as betterSignUp } from "@/lib/auth-client";
 
 type User = {
   id: string;
   name: string;
   email: string;
+  emailVerified: boolean;
+  image?: string | null;
+};
+
+type Session = {
+  id: string;
+  userId: string;
+  expiresAt: Date;
+  token: string;
 };
 
 type AuthContextType = {
   user: User | null;
+  session: Session | null;
   loading: boolean;
-  signIn: (email: string, name?: string) => Promise<void>;
-  signUp: (email: string, name: string) => Promise<void>;
+  signIn: (email: string, password?: string) => Promise<{ error?: string } | void>;
+  signUp: (email: string, name: string, password?: string) => Promise<{ error?: string } | void>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialSession = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: User | null;
+  initialSession?: Session | null;
+}) {
+  const { data, isPending } = useSession();
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [session, setSession] = useState<Session | null>(initialSession);
 
   useEffect(() => {
-    const saved = localStorage.getItem("artisun.user.v1");
-    if (saved) {
-      try {
-        setUser(JSON.parse(saved));
-      } catch {
-        localStorage.removeItem("artisun.user.v1");
-      }
+    if (data) {
+      setUser(data.user as any);
+      setSession(data.session as any);
+    } else if (!isPending) {
+      setUser(null);
+      setSession(null);
     }
-    setLoading(false);
-  }, []);
+  }, [data, isPending]);
 
-  const signIn = async (email: string, name?: string) => {
-    setLoading(true);
-    // Mock network request
-    await new Promise((r) => setTimeout(r, 600));
-    const newUser = {
-      id: "user-1",
-      name: name || "Karan Malhotra",
+  const signIn = async (email: string, password?: string) => {
+    const res = await betterSignIn.email({
       email,
-    };
-    localStorage.setItem("artisun.user.v1", JSON.stringify(newUser));
-    setUser(newUser);
-    setLoading(false);
+      password: password || "",
+      callbackURL: "/account",
+    });
+    if (res?.error) {
+      const errMsg = res.error.message || "Failed to sign in";
+      toast.error(errMsg);
+      return { error: errMsg };
+    }
   };
 
-  const signUp = async (email: string, name: string) => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const newUser = {
-      id: "user-1",
-      name,
+  const signUp = async (email: string, name: string, password?: string) => {
+    const res = await betterSignUp.email({
       email,
-    };
-    localStorage.setItem("artisun.user.v1", JSON.stringify(newUser));
-    setUser(newUser);
-    setLoading(false);
+      password: password || "",
+      name,
+      callbackURL: "/account",
+    });
+    if (res?.error) {
+      const errMsg = res.error.message || "Failed to sign up";
+      toast.error(errMsg);
+      return { error: errMsg };
+    }
   };
 
   const signOut = async () => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
-    localStorage.removeItem("artisun.user.v1");
+    await betterSignOut();
     setUser(null);
-    setLoading(false);
+    setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading: isPending,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -79,9 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    // Return mock values if outside provider (during SSR or early mounting)
+    // Return safe fallback for outside AuthProvider during early rendering
     return {
       user: null,
+      session: null,
       loading: false,
       signIn: async () => {},
       signUp: async () => {},

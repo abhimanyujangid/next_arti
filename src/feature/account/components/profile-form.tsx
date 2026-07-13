@@ -1,35 +1,70 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { AccountNav } from "./account-layout";
 import { useAuth } from "@/hooks/use-auth";
+import { authClient } from "@/lib/auth-client";
+import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function ProfileForm() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   
-  // Local state for mock profile so users can test editing and saving!
-  const [profileName, setProfileName] = useState("Karan Malhotra");
-  const [email, setEmail] = useState("karan.malhotra@gmail.com");
+  const [profileName, setProfileName] = useState("");
+  const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setProfileName(user.name || "Karan Malhotra");
-      setEmail(user.email || "karan.malhotra@gmail.com");
+      setProfileName(user.name || "");
+      setEmail(user.email || "");
     }
   }, [user]);
 
-  const { register, handleSubmit } = useForm({
-    values: { full_name: profileName },
+  const form = useForm({
+    defaultValues: {
+      full_name: profileName,
+    },
+    onSubmit: async ({ value }) => {
+      setSaving(true);
+      try {
+        const res = await authClient.updateUser({
+          name: value.full_name,
+        });
+        if (res?.error) {
+          throw new Error(res.error.message || "Failed to update profile");
+        }
+        setProfileName(value.full_name);
+        toast.success("Profile saved successfully");
+      } catch (err: any) {
+        toast.error(err.message || "Error updating profile");
+      } finally {
+        setSaving(false);
+      }
+    },
   });
 
-  const signOutUser = () => {
-    // Just mock sign out and redirect to home
-    toast.success("Signed out successfully");
-    router.push("/");
+  // Keep form in sync when user loads asynchronously
+  useEffect(() => {
+    if (profileName && !form.state.values.full_name) {
+      form.setFieldValue("full_name", profileName);
+    }
+  }, [profileName, form]);
+
+  const signOutUser = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out successfully");
+      router.push("/");
+    } catch {
+      toast.error("Failed to sign out");
+    }
   };
 
   return (
@@ -44,23 +79,50 @@ export function ProfileForm() {
           <p className="mt-2 text-sm text-muted-foreground">{email}</p>
 
           <form
-            onSubmit={handleSubmit((v) => {
-              setProfileName(v.full_name);
-              toast.success("Profile saved");
-            })}
-            className="mt-10 max-w-md space-y-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            className="mt-10 max-w-md space-y-6"
           >
-            <label className="block">
-              <span className="eyebrow">Full name</span>
-              <input
-                {...register("full_name")}
-                placeholder="Your full name"
-                className="mt-2 w-full bg-transparent border-b border-foreground/30 py-2 focus:outline-none focus:border-accent"
-              />
-            </label>
-            <button className="bg-foreground text-background px-6 py-3 text-xs uppercase tracking-[0.24em] hover:bg-accent transition cursor-pointer">
-              Save profile
-            </button>
+            <form.Field
+              name="full_name"
+              validators={{
+                onChange: ({ value }) => {
+                  const res = z.string().min(2, "Name must be at least 2 characters").safeParse(value);
+                  return res.success ? undefined : res.error.issues[0].message;
+                },
+              }}
+            >
+              {(field) => {
+                const error = field.state.meta.isTouched && field.state.meta.errors.length > 0 ? field.state.meta.errors[0]?.toString() : null;
+                return (
+                  <div className="grid gap-2">
+                    <Label htmlFor={field.name} className="eyebrow">Full name</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="text"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Your full name"
+                      className={`bg-transparent border-b border-t-0 border-x-0 border-foreground/30 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-accent px-0 ${error ? "border-destructive focus-visible:border-destructive" : ""}`}
+                    />
+                    {error && <span className="text-xs text-destructive">{error}</span>}
+                  </div>
+                );
+              }}
+            </form.Field>
+
+            <Button
+              disabled={saving}
+              type="submit"
+              className="bg-foreground text-background px-6 py-6 text-xs uppercase tracking-[0.24em] hover:bg-accent transition cursor-pointer disabled:opacity-50 rounded-none"
+            >
+              {saving ? "Saving…" : "Save profile"}
+            </Button>
           </form>
 
           <hr className="gold-rule my-12" />

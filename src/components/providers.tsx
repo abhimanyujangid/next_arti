@@ -8,7 +8,15 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { trpc } from "@/lib/trpc/client";
 import { AuthProvider } from "@/hooks/use-auth";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialUser = null,
+  initialSession = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: any;
+  initialSession?: any;
+}) {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
@@ -25,7 +33,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <NuqsAdapter>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider initialUser={initialUser} initialSession={initialSession}>
+            {children}
+          </AuthProvider>
         </NuqsAdapter>
       </QueryClientProvider>
     </trpc.Provider>

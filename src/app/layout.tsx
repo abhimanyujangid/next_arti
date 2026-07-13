@@ -4,6 +4,8 @@ import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: {
@@ -21,15 +23,24 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let sessionData = null;
+  try {
+    sessionData = await auth.api.getSession({
+      headers: await headers(),
+    });
+  } catch (error) {
+    // Fallback if request context is not available during static generation
+  }
+
   return (
     <html lang="en">
       <body className="antialiased min-h-screen flex flex-col">
-        <Providers>
+        <Providers initialUser={sessionData?.user} initialSession={sessionData?.session}>
           <SiteHeader />
           <main className="flex-1">
             {children}
