@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { ProductCard } from "./product-card";
-import type { CatalogProductCard } from "@/features/catalog/api/utils";
+import type { CatalogProductCard } from "@/feature/catalog/api/utils";
 
 // Mock collection data
 const mockCollectionDetails = [

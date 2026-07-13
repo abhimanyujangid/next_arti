@@ -7,9 +7,9 @@ import { toast } from "sonner";
 import { formatINR, discountPct } from "@/lib/format";
 import { ProductCard } from "./product-card";
 import { ProductReviews, ReviewStars } from "./product-reviews";
-import { useCart } from "@/features/cart/hooks/use-cart-store";
-import { useWishlist } from "@/features/account/hooks/use-wishlist-store";
-import type { CatalogProductCard } from "@/features/catalog/api/utils";
+import { useCart } from "@/feature/cart/hooks/use-cart-store";
+import { useWishlist } from "@/feature/account/hooks/use-wishlist-store";
+import type { CatalogProductCard } from "@/feature/catalog/api/utils";
 
 // Mock products database for dynamic frontend product details
 const mockProductsDetailed = [

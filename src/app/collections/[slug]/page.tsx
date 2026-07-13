@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CollectionDetails } from "@/features/catalog/components/collection-details";
+import { CollectionDetails } from "@/feature/catalog/components/collection-details";
 
 type Props = {
   params: Promise<{ slug: string }>;

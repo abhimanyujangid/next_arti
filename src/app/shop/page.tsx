@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ShopCatalog } from "@/features/catalog/components/shop-catalog";
+import { ShopCatalog } from "@/feature/catalog/components/shop-catalog";
 
 export const metadata: Metadata = {
   title: "Shop Handcrafted Indian Art — ArtiSun",

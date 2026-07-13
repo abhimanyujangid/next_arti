@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatINR, discountPct } from "@/lib/format";
-import type { CatalogProductCard } from "@/features/catalog/api/utils";
+import type { CatalogProductCard } from "@/feature/catalog/api/utils";
 
 export function ProductCard({ product }: { product: CatalogProductCard }) {
   const disc = discountPct(product.price_original, product.price_discounted);

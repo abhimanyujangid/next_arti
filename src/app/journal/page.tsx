@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JournalList } from "@/features/journal/components/journal-list";
+import { JournalList } from "@/feature/journal/components/journal-list";
 
 export const metadata: Metadata = {
   title: "The Journal — ArtiSun",

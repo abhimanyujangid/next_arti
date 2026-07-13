@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JournalPost } from "@/features/journal/components/journal-details";
+import { JournalPost } from "@/feature/journal/components/journal-details";
 
 type Props = {
   params: Promise<{ slug: string }>;

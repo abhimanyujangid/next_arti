@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CollectionList } from "@/features/catalog/components/collection-list";
+import { CollectionList } from "@/feature/catalog/components/collection-list";
 
 export const metadata: Metadata = {
   title: "Collections — ArtiSun",

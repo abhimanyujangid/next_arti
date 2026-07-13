@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/features/cart/hooks/use-cart-store";
+import { useCart } from "@/feature/cart/hooks/use-cart-store";
 import { formatINR } from "@/lib/format";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
