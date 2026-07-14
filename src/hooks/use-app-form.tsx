@@ -34,12 +34,18 @@ function TextField({
   label,
   className,
   type,
+  onChange,
   ...props
 }: { label: string } & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    field.handleChange(e.target.value);
+    onChange?.(e);
+  };
 
   return (
     <Field data-invalid={isInvalid || undefined}>
@@ -55,7 +61,7 @@ function TextField({
             type={showPassword ? "text" : "password"}
             value={field.state.value ?? ""}
             onBlur={field.handleBlur}
-            onChange={(e) => field.handleChange(e.target.value)}
+            onChange={handleChange}
             aria-invalid={isInvalid}
             className={cn(
               underlineInputClassName,
@@ -87,7 +93,7 @@ function TextField({
           type={type}
           value={field.state.value ?? ""}
           onBlur={field.handleBlur}
-          onChange={(e) => field.handleChange(e.target.value)}
+          onChange={handleChange}
           aria-invalid={isInvalid}
           className={cn(
             underlineInputClassName,

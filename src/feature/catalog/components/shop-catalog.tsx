@@ -5,14 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { useState, useMemo } from "react";
 import { ProductCard } from "./product-card";
 import type { CatalogProductCard } from "../api/utils";
-
-export const CATEGORIES = [
-  { slug: "", label: "All works" },
-  { slug: "paintings", label: "Paintings" },
-  { slug: "metal-art", label: "Brass & Bronze" },
-  { slug: "wood-art", label: "Wood Carvings" },
-  { slug: "textiles", label: "Heirloom Textiles" },
-];
+import { trpc } from "@/lib/trpc/client";
 
 export const PRICE_BUCKETS = [
   { label: "Under ₹10,000", min: 0, max: 10000 },
@@ -179,6 +172,15 @@ export function ShopCatalog() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: liveCategories = [] } = trpc.catalog.listCategories.useQuery();
+
+  const categories = useMemo(
+    () => [
+      { slug: "", label: "All works" },
+      ...liveCategories.map((c) => ({ slug: c.slug, label: c.name })),
+    ],
+    [liveCategories],
+  );
 
   // Parse filters from query params
   const category = searchParams.get("category") || "";
@@ -272,8 +274,8 @@ export function ShopCatalog() {
           <div>
             <div className="eyebrow mb-4">Discipline</div>
             <ul className="space-y-2">
-              {CATEGORIES.map((c) => (
-                <li key={c.label}>
+              {categories.map((c) => (
+                <li key={c.slug || "all"}>
                   <button
                     onClick={() => updateSearch({ category: c.slug })}
                     className={

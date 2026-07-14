@@ -1,35 +1,46 @@
-import { protectedProcedure, router } from '@/lib/trpc/init';
-import { r2Client } from '@/lib/r2';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { z } from 'zod';
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
+import { adminProcedure, router } from "@/lib/trpc/init";
+import { createPresignedPutUrl, getPublicUrl } from "@/lib/r2";
+
+const ALLOWED_FOLDERS = ["categories"] as const;
+const ALLOWED_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;
 
 export const uploadRouter = router({
-  getPresignedUrl: protectedProcedure
+  getPresignedUrl: adminProcedure
     .input(
       z.object({
-        filename: z.string(),
-        contentType: z.string(),
-      })
+        filename: z.string().min(1),
+        contentType: z.enum(ALLOWED_CONTENT_TYPES),
+        folder: z.enum(ALLOWED_FOLDERS).default("categories"),
+      }),
     )
     .mutation(async ({ input, ctx }) => {
-      const extension = input.filename.split('.').pop() || '';
-      const uniqueFilename = `${ctx.session.user.id}/${Date.now()}-${Math.random()
+      const extension = input.filename.split(".").pop()?.toLowerCase() || "bin";
+      const key = `${input.folder}/${ctx.session.user.id}/${Date.now()}-${Math.random()
         .toString(36)
-        .substring(7)}.${extension}`;
+        .slice(2, 9)}.${extension}`;
 
-      const command = new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME || 'artisun',
-        Key: uniqueFilename,
-        ContentType: input.contentType,
-      });
+      try {
+        const presignedUrl = await createPresignedPutUrl({
+          key,
+          contentType: input.contentType,
+        });
+        const publicUrl = getPublicUrl(key);
 
-      const presignedUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
-      const publicUrl = `https://${process.env.R2_PUBLIC_DOMAIN}/${uniqueFilename}`;
-
-      return {
-        presignedUrl,
-        publicUrl,
-      };
+        return { key, presignedUrl, publicUrl };
+      } catch (error) {
+        console.error("Failed to create presigned URL", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create upload URL",
+        });
+      }
     }),
 });

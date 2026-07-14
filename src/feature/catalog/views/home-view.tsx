@@ -4,34 +4,7 @@ import Link from "next/link";
 import { ProductCard } from "@/feature/catalog/components/product-card";
 import heroImage from "@/assets/hero-pattachitra.jpg";
 import artisanImage from "@/assets/artisan-story.jpg";
-
-// Mock homepage data matching the expected shapes
-const mockCategories = [
-  {
-    id: "cat-1",
-    slug: "paintings",
-    name: "Paintings",
-    coverUrl: "/images/product-madhubani.jpg",
-  },
-  {
-    id: "cat-2",
-    slug: "wood-art",
-    name: "Wood Art",
-    coverUrl: "/images/product-wood-panel.jpg",
-  },
-  {
-    id: "cat-3",
-    slug: "metal-art",
-    name: "Brass & Bronze",
-    coverUrl: "/images/product-brass-diya.jpg",
-  },
-  {
-    id: "cat-4",
-    slug: "textiles",
-    name: "Heirloom Textiles",
-    coverUrl: "/images/product-kashmiri-cushion.jpg",
-  },
-];
+import { trpc } from "@/lib/trpc/client";
 
 const mockFeatured = [
   {
@@ -145,6 +118,8 @@ const mockBestSellers = [
 ];
 
 export function HomeView() {
+  const { data: categories = [] } = trpc.catalog.listCategories.useQuery();
+
   return (
     <>
       {/* HERO */}
@@ -188,30 +163,51 @@ export function HomeView() {
 
       {/* CATEGORIES */}
       <section className="mx-auto max-w-[1400px] px-6 md:px-10 py-20 md:py-28">
-        <div className="text-center mb-14">
+        <div className="mb-14 text-center">
           <div className="eyebrow">Shop by discipline</div>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl">Four disciplines. One devotion.</h2>
+          <h2 className="mt-3 font-display text-4xl md:text-5xl">
+            {categories.length
+              ? `${categories.length} disciplines. One devotion.`
+              : "Disciplines shaped by craft."}
+          </h2>
         </div>
-        <div className="grid gap-6 md:gap-8 md:grid-cols-4">
-          {mockCategories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/shop?category=${c.slug}`}
-              className="group text-center"
-            >
-              <div className="aspect-[3/4] overflow-hidden bg-secondary/60">
-                <img
-                  src={c.coverUrl}
-                  alt={c.name}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                />
-              </div>
-              <h3 className="mt-5 font-display text-xl group-hover:text-accent transition-colors">{c.name}</h3>
-              <div className="mt-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">Explore →</div>
-            </Link>
-          ))}
-        </div>
+        {categories.length === 0 ? (
+          <p className="text-center text-muted-foreground">
+            Categories will appear here once published in admin.
+          </p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-4 md:gap-8">
+            {categories.map((c) => (
+              <Link
+                key={c.id}
+                href={`/shop?category=${c.slug}`}
+                className="group text-center"
+              >
+                <div className="aspect-[3/4] overflow-hidden bg-secondary/60">
+                  {c.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={c.coverUrl}
+                      alt={c.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      {c.name}
+                    </div>
+                  )}
+                </div>
+                <h3 className="mt-5 font-display text-xl transition-colors group-hover:text-accent">
+                  {c.name}
+                </h3>
+                <div className="mt-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                  Explore →
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* FEATURED MASTERPIECES */}

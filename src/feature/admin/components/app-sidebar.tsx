@@ -2,24 +2,31 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, BarChart3, Users, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  LogOut,
+  Tags,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarGroup, 
-  SidebarGroupContent, 
-  SidebarGroupLabel, 
-  SidebarHeader, 
-  SidebarMenu, 
-  SidebarMenuButton, 
-  SidebarMenuItem 
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const adminNavigation = [
+const dashboardNavigation = [
   {
     title: "Home",
     url: "/admin",
@@ -42,30 +49,66 @@ const adminNavigation = [
   },
 ];
 
+const catalogNavigation = [
+  {
+    title: "Categories",
+    url: "/admin/categories",
+    icon: Tags,
+  },
+];
+
 export function AppSidebar() {
   const router = useRouter();
   const { signOut } = useAuth();
 
   return (
     <Sidebar className="border-r border-[#e5e5e0] bg-[#fdfdfc]">
-      <SidebarHeader className="h-16 flex flex-row items-center px-6 border-b border-[#e5e5e0]">
+      <SidebarHeader className="flex h-16 flex-row items-center border-b border-[#e5e5e0] px-6">
         <div className="flex items-center gap-2">
           <span className="font-serif text-xl text-[#1a1a1a]">ArtiSun</span>
-          <span className="text-[10px] tracking-widest text-[#707065] uppercase">Admin</span>
+          <span className="text-[10px] uppercase tracking-widest text-[#707065]">
+            Admin
+          </span>
         </div>
       </SidebarHeader>
       <SidebarContent className="px-4 py-6">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-[#707065] uppercase mb-4">
+          <SidebarGroupLabel className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#707065]">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
-              {adminNavigation.map((item) => (
+              {dashboardNavigation.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="hover:bg-[#f5f5f0] text-[#4a4a40] hover:text-[#1a1a1a] transition-colors rounded-none px-3 py-5">
+                  <SidebarMenuButton
+                    asChild
+                    className="rounded-none px-3 py-5 text-[#4a4a40] transition-colors hover:bg-[#f5f5f0] hover:text-[#1a1a1a]"
+                  >
                     <Link href={item.url}>
-                      <item.icon className="h-4 w-4 mr-3" />
+                      <item.icon className="mr-3 size-4" />
+                      <span className="text-sm tracking-wide">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#707065]">
+            Catalog
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {catalogNavigation.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    className="rounded-none px-3 py-5 text-[#4a4a40] transition-colors hover:bg-[#f5f5f0] hover:text-[#1a1a1a]"
+                  >
+                    <Link href={item.url}>
+                      <item.icon className="mr-3 size-4" />
                       <span className="text-sm tracking-wide">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -75,17 +118,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-[#e5e5e0]">
+      <SidebarFooter className="border-t border-[#e5e5e0] p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton 
+            <SidebarMenuButton
               onClick={async () => {
                 await signOut();
                 router.push("/auth");
               }}
-              className="w-full hover:bg-[#f5f5f0] text-[#707065] hover:text-[#1a1a1a] transition-colors rounded-none justify-start px-3 py-5 cursor-pointer"
+              className="w-full cursor-pointer justify-start rounded-none px-3 py-5 text-[#707065] transition-colors hover:bg-[#f5f5f0] hover:text-[#1a1a1a]"
             >
-              <LogOut className="h-4 w-4 mr-3" />
+              <LogOut className="mr-3 size-4" />
               <span className="text-sm tracking-wide">Exit Admin</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
