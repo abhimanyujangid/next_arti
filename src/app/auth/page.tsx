@@ -17,11 +17,17 @@ export default async function AuthPage({
   const session = await api.auth.getSession();
   
   const params = await searchParams;
-  const redirectPath = typeof params.redirect === 'string' ? params.redirect : '/account';
+  let redirectPath = typeof params.redirect === 'string' ? params.redirect : '/account';
 
   // If already authenticated, redirect immediately on the server
   if (session?.user) {
-    redirect(redirectPath);
+    if (session.user.role === "admin") {
+      const target = redirectPath.startsWith("/admin") ? redirectPath : "/admin";
+      redirect(target);
+    } else {
+      const target = redirectPath === "/" ? "/account" : redirectPath;
+      redirect(target);
+    }
   }
 
   return <AuthView redirectPath={redirectPath} />;

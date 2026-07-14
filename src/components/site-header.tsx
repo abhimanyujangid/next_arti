@@ -85,7 +85,11 @@ export function SiteHeader() {
             </Link>
           )}
           {user ? (
-            <Link href="/account" aria-label="Account" className="p-2 hover:text-accent transition-colors">
+            <Link
+              href={user.role === "admin" ? "/admin" : "/account"}
+              aria-label="Account"
+              className="p-2 hover:text-accent transition-colors"
+            >
               <User className="h-4.5 w-4.5" strokeWidth={1.4} />
             </Link>
           ) : (

@@ -18,10 +18,18 @@ export function AuthForm({ redirectPath }: { redirectPath: string }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const getRedirectTarget = (usr: typeof user) => {
+    if (!usr) return "/";
+    if (usr.role === "admin") {
+      return redirectPath.startsWith("/admin") ? redirectPath : "/admin";
+    }
+    return redirectPath === "/" ? "/account" : redirectPath;
+  };
+
   // Redirect if user is already logged in
   useEffect(() => {
     if (!loading && user) {
-      router.push(redirectPath);
+      router.push(getRedirectTarget(user));
     }
   }, [user, loading, router, redirectPath]);
 

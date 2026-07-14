@@ -11,8 +11,12 @@ export default async function AdminLayout({
   const api = await serverTrpc();
   const session = await api.auth.getSession();
   
-  if (!session?.user || session.user.role !== "admin") {
+  if (!session?.user) {
     redirect("/auth?redirect=/admin");
+  }
+
+  if (session.user.role !== "admin") {
+    redirect("/");
   }
 
   return (

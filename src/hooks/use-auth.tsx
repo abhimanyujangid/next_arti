@@ -10,6 +10,7 @@ type User = {
   email: string;
   emailVerified: boolean;
   image?: string | null;
+  role?: string;
 };
 
 type Session = {
@@ -57,7 +58,6 @@ export function AuthProvider({
     const res = await betterSignIn.email({
       email,
       password: password || "",
-      callbackURL: "/account",
     });
     if (res?.error) {
       const errMsg = res.error.message || "Failed to sign in";

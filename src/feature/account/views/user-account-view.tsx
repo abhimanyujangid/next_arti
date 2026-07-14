@@ -5,9 +5,15 @@ import { trpc } from "@/lib/trpc/client";
 import { ProfileForm } from "../components/profile-form";
 import { useAuth } from "@/hooks/use-auth";
 
-export function UserAccountView({ initialData }: { initialData?: any }) {
+import type { AppRouter } from "@/lib/trpc/root";
+import type { inferRouterOutputs } from "@trpc/server";
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type ProfileData = RouterOutputs["user"]["getProfile"];
+
+export function UserAccountView({ initialData }: { initialData?: ProfileData }) {
   const { user, signOut } = useAuth();
-  
+
   // Hydrated from server
   const { data: profile } = trpc.user.getProfile.useQuery(undefined, {
     initialData,
@@ -30,12 +36,9 @@ export function UserAccountView({ initialData }: { initialData?: any }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
         <div className="space-y-8">
-          <section>
-            <h2 className="eyebrow mb-6">Profile Settings</h2>
-            <ProfileForm />
-          </section>
+          <ProfileForm />
         </div>
-        
+
         <aside className="space-y-6">
           <div className="border border-border p-6 bg-accent/5">
             <h3 className="eyebrow mb-4">Account Overview</h3>

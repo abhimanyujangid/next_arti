@@ -3,6 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { LayoutDashboard, ShoppingCart, BarChart3, Users, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+
 import { 
   Sidebar, 
   SidebarContent, 
@@ -40,6 +43,9 @@ const adminNavigation = [
 ];
 
 export function AppSidebar() {
+  const router = useRouter();
+  const { signOut } = useAuth();
+
   return (
     <Sidebar className="border-r border-[#e5e5e0] bg-[#fdfdfc]">
       <SidebarHeader className="h-16 flex flex-row items-center px-6 border-b border-[#e5e5e0]">
@@ -72,11 +78,15 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t border-[#e5e5e0]">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="hover:bg-[#f5f5f0] text-[#707065] hover:text-[#1a1a1a] transition-colors rounded-none">
-              <Link href="/account">
-                <LogOut className="h-4 w-4 mr-3" />
-                <span className="text-sm tracking-wide">Exit Admin</span>
-              </Link>
+            <SidebarMenuButton 
+              onClick={async () => {
+                await signOut();
+                router.push("/auth");
+              }}
+              className="w-full hover:bg-[#f5f5f0] text-[#707065] hover:text-[#1a1a1a] transition-colors rounded-none justify-start px-3 py-5 cursor-pointer"
+            >
+              <LogOut className="h-4 w-4 mr-3" />
+              <span className="text-sm tracking-wide">Exit Admin</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
