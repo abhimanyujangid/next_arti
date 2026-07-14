@@ -22,6 +22,10 @@ export function SiteHeader() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   // Replicate TanStack redirects logic
   const searchString = searchParams.toString();
   const currentQuery = searchString ? `?${searchString}` : "";

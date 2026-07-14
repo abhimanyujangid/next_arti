@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
 export function SiteFooter() {
+  const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
