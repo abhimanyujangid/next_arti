@@ -1,0 +1,45 @@
+---
+description: URL search params with nuqs — parsers, SSR cache, useQueryState
+globs: src/app/**/*.tsx,src/feature/**/lib/params.ts,src/feature/**/components/**,src/feature/**/views/**
+alwaysApply: false
+---
+
+# nuqs URL State
+
+## Setup
+
+- Wrap the app in `<NuqsAdapter>` (root `layout.tsx`, inside providers).
+- Define parsers per feature in `feature/<name>/lib/params.ts`.
+
+## Define parsers once
+
+```ts
+import { createSearchParamsCache, parseAsString } from "nuqs/server";
+
+export const voicesSearchParams = {
+  query: parseAsString.withDefault(""),
+};
+
+export const voicesSearchParamsCache = createSearchParamsCache(voicesSearchParams);
+```
+
+## Server page — parse then prefetch
+
+```tsx
+const { query } = await voicesSearchParamsCache.parse(searchParams);
+prefetch(trpc.voices.getAll.queryOptions({ query }));
+```
+
+## Client — same parser object
+
+```tsx
+const [query, setQuery] = useQueryState("query", voicesSearchParams.query);
+const { data } = useSuspenseQuery(trpc.voices.getAll.queryOptions({ query }));
+```
+
+## Rules
+
+- Share the same parser between server cache and client `useQueryState`.
+- Debounce text inputs before `setQuery` (`use-debounce`) to avoid refetch spam.
+- Keep URL as source of truth for filters/search — not local-only state (except debounce input).
+- Type page `searchParams` as `Promise<SearchParams>` from `nuqs/server` when using the cache.

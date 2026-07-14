@@ -1,8 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { toast } from "sonner";
-import { useSession, signOut as betterSignOut, signIn as betterSignIn, signUp as betterSignUp } from "@/lib/auth-client";
+import {
+  useSession,
+  signOut as betterSignOut,
+  signIn as betterSignIn,
+  signUp as betterSignUp,
+} from "@/lib/auth-client";
+import { authErrorMessage } from "@/feature/auth/utils/auth-error";
 
 type User = {
   id: string;
@@ -20,12 +25,14 @@ type Session = {
   token: string;
 };
 
+type AuthResult = { error: string | null };
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password?: string) => Promise<{ error?: string } | void>;
-  signUp: (email: string, name: string, password?: string) => Promise<{ error?: string } | void>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, name: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
@@ -46,38 +53,31 @@ export function AuthProvider({
 
   useEffect(() => {
     if (data) {
-      setUser(data.user as any);
-      setSession(data.session as any);
+      setUser(data.user as User);
+      setSession(data.session as Session);
     } else if (!isPending) {
       setUser(null);
       setSession(null);
     }
   }, [data, isPending]);
 
-  const signIn = async (email: string, password?: string) => {
-    const res = await betterSignIn.email({
-      email,
-      password: password || "",
-    });
-    if (res?.error) {
-      const errMsg = res.error.message || "Failed to sign in";
-      toast.error(errMsg);
-      return { error: errMsg };
-    }
+  const signIn = async (email: string, password: string): Promise<AuthResult> => {
+    const { error } = await betterSignIn.email({ email, password });
+    return { error: error ? authErrorMessage(error, "Failed to sign in") : null };
   };
 
-  const signUp = async (email: string, name: string, password?: string) => {
-    const res = await betterSignUp.email({
+  const signUp = async (
+    email: string,
+    name: string,
+    password: string,
+  ): Promise<AuthResult> => {
+    const { error } = await betterSignUp.email({
       email,
-      password: password || "",
+      password,
       name,
       callbackURL: "/account",
     });
-    if (res?.error) {
-      const errMsg = res.error.message || "Failed to sign up";
-      toast.error(errMsg);
-      return { error: errMsg };
-    }
+    return { error: error ? authErrorMessage(error, "Failed to sign up") : null };
   };
 
   const signOut = async () => {
@@ -105,13 +105,12 @@ export function AuthProvider({
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    // Return safe fallback for outside AuthProvider during early rendering
     return {
       user: null,
       session: null,
       loading: false,
-      signIn: async () => {},
-      signUp: async () => {},
+      signIn: async () => ({ error: null }),
+      signUp: async () => ({ error: null }),
       signOut: async () => {},
     };
   }

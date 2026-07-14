@@ -1,0 +1,41 @@
+---
+description: TanStack Form with Zod, use-app-form, and shadcn UI
+globs: src/hooks/use-app-form.tsx,src/feature/**/*form*.tsx,src/feature/**/components/**
+alwaysApply: false
+---
+
+# Forms & shadcn UI
+
+## Shared hook (`hooks/use-app-form.tsx`)
+
+Use `useAppForm` + `useTypedAppFormContext` from `createFormHook` — not ad-hoc form context.
+
+## Multi-section forms
+
+1. Zod schema + `defaultValues` + `formOptions({ defaultValues })`.
+2. Parent: `useAppForm({ ...formOptions, validators: { onSubmit: schema }, onSubmit })`.
+3. Wrap children in `<form.AppForm>`.
+4. Children: `useTypedAppFormContext(formOptions)` (same options for types).
+5. Slice state: `useStore(form.store, (s) => s.values.text)`.
+
+## Field + shadcn
+
+```tsx
+<form.Field name="name">
+  {(field) => {
+    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+    return (
+      <Field data-invalid={isInvalid}>
+        <Input value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} aria-invalid={isInvalid} />
+        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+      </Field>
+    );
+  }}
+</form.Field>
+```
+
+## UI composition
+
+- Prefer shadcn (`components/ui/*`) first: Button, Input, Field, Select, Dialog, etc.
+- Build feature/custom components by composing shadcn — do not reinvent primitives.
+- Mutations: `useMutation(trpc....mutationOptions({}))`; toast + invalidate on success.

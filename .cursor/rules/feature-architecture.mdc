@@ -1,0 +1,35 @@
+---
+description: Feature-based folder structure and coding conventions
+alwaysApply: true
+---
+
+# Feature Architecture
+
+## Folder layout
+
+```
+src/
+  app/                  # Routes only — thin RSC pages, layouts, loading, api/
+  feature/<name>/       # Business UI + logic
+    components/         # Feature components
+    views/              # Page-level client compositions (*View)
+    hooks/ | hook/      # Feature hooks
+    contexts/           # Feature React context
+    data/               # Constants, static config
+    lib/                # Feature helpers (nuqs params, etc.)
+    utils/              # Pure helpers
+  components/ui/        # shadcn primitives — no business logic
+  components/           # Shared app components (PageHeader, etc.)
+  hooks/                # Shared hooks (use-app-form)
+  lib/                  # Infra (db, env, utils, clients)
+  trpc/                 # Routers, client, server prefetch helpers
+```
+
+## Rules
+
+- `app/` pages are Server Components: parse params, set metadata, `prefetch`, wrap in `HydrateClient`, render a feature `*View`.
+- Feature logic lives in `feature/<name>/` — never in `components/ui/`.
+- Imports use `@/src/...`.
+- Files: `kebab-case.tsx` for components/views; hooks: `use-*.ts`.
+- Add `"use client"` only when the file needs hooks, browser APIs, or events.
+- Server-only modules: `import "server-only"`.

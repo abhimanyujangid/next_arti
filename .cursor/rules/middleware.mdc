@@ -1,0 +1,55 @@
+---
+description: Next.js proxy/middleware auth gates and tRPC procedure middleware
+globs: src/proxy.ts,src/middleware.ts,src/lib/trpc/init.ts
+alwaysApply: false
+---
+
+# Middleware
+
+## File location
+
+- Prefer `src/proxy.ts` (Next.js 16+) or `src/middleware.ts`.
+- Keep it edge-safe: optimistic cookie redirects only — no Prisma, no `auth.api.getSession`.
+
+## Route protection pattern (`src/proxy.ts`)
+
+Auth uses **better-auth** with `user` / `admin` roles (not Clerk, not orgs).
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+
+export function proxy(request: NextRequest) {
+  const sessionCookie = getSessionCookie(request);
+
+  if (!sessionCookie) {
+    const loginUrl = new URL("/auth", request.url);
+    loginUrl.searchParams.set(
+      "redirect",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    );
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/account/:path*", "/admin/:path*"],
+};
+```
+
+## Rules
+
+- Proxy = optimistic gatekeeping via `getSessionCookie` only (cookie presence, not validation).
+- Always validate the session in RSC pages/layouts with `auth.api.getSession` (or tRPC) before rendering protected data.
+- Public routes stay open: `/`, `/auth`, `/api/auth`, shop/catalog, etc. — do not put them in the proxy matcher unless intentional.
+- Role checks (`admin`) belong in layouts/pages and tRPC — not in the proxy.
+- Always export `config.matcher` that skips `_next`/static assets when using a broad matcher.
+- Do not fetch data or talk to DB in proxy; redirect only.
+
+## tRPC procedure middleware (`src/lib/trpc/init.ts`)
+
+- `publicProcedure` → `protectedProcedure` (require session) → `adminProcedure` (require `role === "admin"`).
+- Prefer `protectedProcedure` for user-scoped Prisma queries; `adminProcedure` for admin-only.
+- Throw `TRPCError` (`UNAUTHORIZED` / `FORBIDDEN`) — do not redirect from procedures.

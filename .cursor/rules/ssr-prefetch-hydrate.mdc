@@ -1,0 +1,44 @@
+---
+description: SSR pages, tRPC prefetch, HydrateClient, useSuspenseQuery
+globs: src/app/**/*.tsx,src/trpc/**/*,src/feature/**/views/**
+alwaysApply: false
+---
+
+# SSR, Prefetch & HydrateClient
+
+## Page (Server Component)
+
+```tsx
+import { prefetch, trpc, HydrateClient } from "@/src/trpc/server";
+import TextToSpeechView from "@/src/feature/text-to-speech/views/text-to-speech-view";
+
+export const metadata: Metadata = { title: "Text to AI Voice" };
+
+export default async function Page({ searchParams }: { searchParams: Promise<{...}> }) {
+  prefetch(trpc.voices.getAll.queryOptions());
+
+  return (
+    <HydrateClient>
+      <TextToSpeechView />
+    </HydrateClient>
+  );
+}
+```
+
+## View (Client — consumes cache)
+
+```tsx
+"use client";
+const trpc = useTRPC();
+const { data: voices } = useSuspenseQuery(trpc.voices.getAll.queryOptions());
+```
+
+## Rules
+
+- Prefetch every query the view will `useSuspenseQuery` — same `queryOptions(...)` args.
+- Always wrap the client view in `<HydrateClient>` after prefetch.
+- Prefer `useSuspenseQuery` / `useSuspenseQueries` over `useQuery` + loading flags.
+- Do not `fetch` in `useEffect` for SSR data.
+- Root metadata uses `title.template`; pages export only `{ title: "Segment" }`.
+- Layouts may prefetch shared queries (e.g. billing) once for children.
+- For URL filters: parse with nuqs (`*SearchParamsCache.parse`) before prefetch — see `nuqs-url-state.mdc`.

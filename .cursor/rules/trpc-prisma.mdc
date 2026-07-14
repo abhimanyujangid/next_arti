@@ -1,0 +1,36 @@
+---
+description: tRPC routers and Prisma data access patterns
+globs: src/trpc/**/*,src/lib/db.ts,prisma/**
+alwaysApply: false
+---
+
+# tRPC & Prisma
+
+## Router pattern
+
+```ts
+export const voicesRouter = createTRPCRouter({
+  getAll: orgProcedure
+    .input(z.object({ query: z.string().trim().optional() }).optional())
+    .query(async ({ input, ctx }) => {
+      return prisma.voice.findMany({
+        where: { orgId: ctx.orgId, /* ... */ },
+        select: { id: true, name: true /* only needed fields */ },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+});
+```
+
+## Rules
+
+- Merge routers in `trpc/routers/_app.ts`; export `AppRouter` type.
+- Stack procedures: `baseProcedure` → `authProcedure` → `orgProcedure`.
+- Always validate with Zod `.input(...)`.
+- Throw `TRPCError` with correct codes (`UNAUTHORIZED`, `NOT_FOUND`, etc.).
+- Prisma via `@/src/lib/db` only inside routers / route handlers — never from client.
+- Prefer `select` / `omit` over returning full rows.
+- Parallel independent queries: `Promise.all([...])`.
+- Client reads: `useTRPC()` + `queryOptions` / `mutationOptions`.
+- After mutations: `queryClient.invalidateQueries({ queryKey: trpc.x.y.queryKey() })`.
+- File uploads / binary: Route Handlers (`app/api/...`), not tRPC.
