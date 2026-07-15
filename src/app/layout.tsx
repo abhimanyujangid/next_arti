@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site-header";
@@ -23,6 +24,12 @@ export const metadata: Metadata = {
   },
 };
 
+function HeaderFallback() {
+  return (
+    <header className="sticky top-0 z-40 h-16 border-b border-border/60 bg-background/85 md:h-20" />
+  );
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -41,7 +48,9 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         <Providers initialUser={sessionData?.user} initialSession={sessionData?.session}>
-          <SiteHeader />
+          <Suspense fallback={<HeaderFallback />}>
+            <SiteHeader />
+          </Suspense>
           <main className="flex-1">
             {children}
           </main>
