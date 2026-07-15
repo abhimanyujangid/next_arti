@@ -6,6 +6,7 @@ import { userRouter } from './routers/user';
 import { catalogRouter } from './routers/catalog';
 import { cartRouter } from './routers/cart';
 import { wishlistRouter } from './routers/wishlist';
+import { addressesRouter } from './routers/addresses';
 
 export const appRouter = router({
   hello: publicProcedure.query(() => {
@@ -18,6 +19,7 @@ export const appRouter = router({
   catalog: catalogRouter,
   cart: cartRouter,
   wishlist: wishlistRouter,
+  addresses: addressesRouter,
 });
 
 export type AppRouter = typeof appRouter;

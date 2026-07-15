@@ -57,6 +57,7 @@ export const adminUsersRouter = router({
           createdAt: true,
           updatedAt: true,
           addresses: {
+            where: { deletedAt: null },
             orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
             select: {
               id: true,

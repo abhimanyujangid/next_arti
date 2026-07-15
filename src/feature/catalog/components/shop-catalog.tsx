@@ -191,7 +191,7 @@ export function ShopCatalog() {
           <div className="mb-8 flex items-center justify-between border-b border-border/60 pb-4">
             <span className="text-sm text-muted-foreground">
               {isLoading
-                ? "Loading…"
+                ? <Skeleton className="h-4 w-24" />
                 : `${total} ${total === 1 ? "work" : "works"} found`}
               {isFetching && !isLoading ? " · Updating" : ""}
             </span>
