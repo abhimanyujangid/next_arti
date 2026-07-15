@@ -97,7 +97,7 @@ export function ShopCatalog() {
       </header>
 
       <div className="grid gap-10 md:grid-cols-[240px_1fr]">
-        <aside className="space-y-8 text-sm">
+        <aside className="space-y-8 text-sm md:sticky md:top-24 md:self-start">
           <div>
             <div className="eyebrow mb-4">Discipline</div>
             <ul className="space-y-2">
