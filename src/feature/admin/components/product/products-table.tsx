@@ -49,10 +49,11 @@ export function ProductsTable({
             )}
           </Link>
 
-          <div className="min-w-0">
+          <div className="min-w-0 overflow-hidden">
             <Link
               href={`/admin/products/${product.id}`}
-              className="truncate font-medium text-[#1a1a1a] hover:text-accent"
+              className="block truncate font-medium text-[#1a1a1a] hover:text-accent"
+              title={product.title}
             >
               {product.title}
             </Link>
