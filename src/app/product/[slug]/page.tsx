@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { TRPCError } from "@trpc/server";
 
@@ -9,11 +10,15 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+const getProductBySlug = cache(async (slug: string) => {
+  const caller = await serverTrpc();
+  return caller.catalog.getBySlug({ slug });
+});
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
-    const caller = await serverTrpc();
-    const { product } = await caller.catalog.getBySlug({ slug });
+    const { product } = await getProductBySlug(slug);
     return {
       title: product.title,
       description:
@@ -33,10 +38,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const caller = await serverTrpc();
 
   try {
-    const { product, related } = await caller.catalog.getBySlug({ slug });
+    const { product, related } = await getProductBySlug(slug);
     return <ProductDetails product={product} related={related} />;
   } catch (error) {
     if (error instanceof TRPCError && error.code === "NOT_FOUND") {

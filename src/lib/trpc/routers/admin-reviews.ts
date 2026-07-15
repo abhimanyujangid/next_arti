@@ -4,24 +4,40 @@ import { z } from "zod";
 import { adminProcedure, router } from "@/lib/trpc/init";
 
 export const adminReviewsRouter = router({
-  list: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.productReview.findMany({
+  /** Products that have at least one review — index for moderation. */
+  listProductsWithReviews: adminProcedure.query(async ({ ctx }) => {
+    const products = await ctx.db.product.findMany({
+      where: { reviews: { some: {} } },
       select: {
         id: true,
-        rating: true,
         title: true,
-        body: true,
-        isApproved: true,
-        createdAt: true,
-        updatedAt: true,
-        product: {
-          select: { id: true, title: true, slug: true },
+        slug: true,
+        images: {
+          select: { url: true },
+          orderBy: { sortOrder: "asc" },
+          take: 1,
         },
-        user: {
-          select: { id: true, name: true, email: true },
+        reviews: {
+          select: { rating: true, isApproved: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return products.map((p) => {
+      const count = p.reviews.length;
+      const pendingCount = p.reviews.filter((r) => !r.isApproved).length;
+      const average =
+        count > 0
+          ? p.reviews.reduce((sum, r) => sum + r.rating, 0) / count
+          : 0;
+      return {
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        coverUrl: p.images[0]?.url ?? null,
+        reviewStats: { count, average, pendingCount },
+      };
     });
   }),
 

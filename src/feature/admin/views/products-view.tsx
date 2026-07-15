@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Package, Pencil, Plus, Trash2 } from "lucide-react";
 
@@ -40,6 +41,7 @@ type ProductListRow = {
   isBestSeller: boolean;
   category: { id: string; name: string; slug: string } | null;
   images: { url: string }[];
+  _count: { reviews: number };
 };
 
 type ProductDetailRow = {
@@ -91,7 +93,28 @@ export function ProductsView() {
   const openEdit = async (row: ProductListRow) => {
     try {
       const detail = await utils.admin.products.getById.fetch({ id: row.id });
-      setEditing(detail);
+      const { reviews: _reviews, reviewStats: _stats, ...formProduct } = detail;
+      setEditing({
+        id: formProduct.id,
+        slug: formProduct.slug,
+        title: formProduct.title,
+        shortDesc: formProduct.shortDesc,
+        longDesc: formProduct.longDesc,
+        story: formProduct.story,
+        categoryId: formProduct.categoryId,
+        region: formProduct.region,
+        material: formProduct.material,
+        dimensions: formProduct.dimensions,
+        weightGrams: formProduct.weightGrams,
+        sku: formProduct.sku,
+        stock: formProduct.stock,
+        priceOriginal: formProduct.priceOriginal,
+        priceDiscounted: formProduct.priceDiscounted,
+        isAvailable: formProduct.isAvailable,
+        isFeatured: formProduct.isFeatured,
+        isBestSeller: formProduct.isBestSeller,
+        images: formProduct.images,
+      });
       setSheetOpen(true);
     } catch (error) {
       toast.error(
@@ -117,18 +140,19 @@ export function ProductsView() {
 
       {isLoading ? (
         <div className="border border-[#e5e5e0] bg-white">
-          <div className="grid grid-cols-[72px_1fr_120px_100px_120px_140px] gap-4 border-b border-[#e5e5e0] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[#707065]">
+          <div className="grid grid-cols-[72px_1fr_120px_80px_80px_120px_140px] gap-4 border-b border-[#e5e5e0] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[#707065]">
             <span>Image</span>
             <span>Title</span>
             <span>Category</span>
             <span>Stock</span>
+            <span>Reviews</span>
             <span>Price</span>
             <span className="text-right">Actions</span>
           </div>
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="grid grid-cols-[72px_1fr_120px_100px_120px_140px] items-center gap-4 border-b border-[#e5e5e0] px-4 py-3 last:border-b-0"
+              className="grid grid-cols-[72px_1fr_120px_80px_80px_120px_140px] items-center gap-4 border-b border-[#e5e5e0] px-4 py-3 last:border-b-0"
             >
               <Skeleton className="size-[56px] rounded-none" />
               <div className="space-y-2">
@@ -136,6 +160,7 @@ export function ProductsView() {
                 <Skeleton className="h-3 w-1/2 rounded-none" />
               </div>
               <Skeleton className="h-4 w-16 rounded-none" />
+              <Skeleton className="h-4 w-8 rounded-none" />
               <Skeleton className="h-4 w-8 rounded-none" />
               <Skeleton className="h-4 w-16 rounded-none" />
               <div className="flex justify-end gap-1">
@@ -165,11 +190,12 @@ export function ProductsView() {
         </Empty>
       ) : (
         <div className="border border-[#e5e5e0] bg-white overflow-x-auto">
-          <div className="grid min-w-[720px] grid-cols-[72px_1fr_120px_80px_120px_140px] gap-4 border-b border-[#e5e5e0] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[#707065]">
+          <div className="grid min-w-[800px] grid-cols-[72px_1fr_120px_80px_80px_120px_140px] gap-4 border-b border-[#e5e5e0] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[#707065]">
             <span>Image</span>
             <span>Title</span>
             <span>Category</span>
             <span>Stock</span>
+            <span>Reviews</span>
             <span>Price</span>
             <span className="text-right">Actions</span>
           </div>
@@ -177,9 +203,12 @@ export function ProductsView() {
           {products.map((product) => (
             <div
               key={product.id}
-              className="grid min-w-[720px] grid-cols-[72px_1fr_120px_80px_120px_140px] items-center gap-4 border-b border-[#e5e5e0] px-4 py-3 last:border-b-0"
+              className="grid min-w-[800px] grid-cols-[72px_1fr_120px_80px_80px_120px_140px] items-center gap-4 border-b border-[#e5e5e0] px-4 py-3 last:border-b-0"
             >
-              <div className="size-[56px] overflow-hidden border border-[#e5e5e0] bg-[#fafaf8]">
+              <Link
+                href={`/admin/products/${product.id}`}
+                className="size-[56px] overflow-hidden border border-[#e5e5e0] bg-[#fafaf8]"
+              >
                 {product.images[0]?.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -192,12 +221,15 @@ export function ProductsView() {
                     None
                   </div>
                 )}
-              </div>
+              </Link>
 
               <div className="min-w-0">
-                <div className="truncate font-medium text-[#1a1a1a]">
+                <Link
+                  href={`/admin/products/${product.id}`}
+                  className="truncate font-medium text-[#1a1a1a] hover:text-accent"
+                >
                   {product.title}
-                </div>
+                </Link>
                 <div className="truncate text-xs text-[#707065]">
                   /{product.slug}
                   {product.isFeatured ? " · Featured" : ""}
@@ -210,6 +242,9 @@ export function ProductsView() {
                 {product.category?.name ?? "—"}
               </div>
               <div className="text-sm text-[#4a4a40]">{product.stock}</div>
+              <div className="text-sm text-[#4a4a40]">
+                {product._count.reviews}
+              </div>
               <div className="text-sm text-[#4a4a40]">
                 {formatINR(product.priceDiscounted ?? product.priceOriginal)}
               </div>

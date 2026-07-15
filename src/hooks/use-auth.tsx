@@ -59,6 +59,7 @@ export function AuthProvider({
       setUser(null);
       setSession(null);
     }
+    // While isPending, keep previous user — avoids logout flicker that re-triggers cart sync
   }, [data, isPending]);
 
   const signIn = async (email: string, password: string): Promise<AuthResult> => {

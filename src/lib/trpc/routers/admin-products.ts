@@ -55,6 +55,7 @@ const productListSelect = {
     orderBy: { sortOrder: "asc" as const },
     take: 1,
   },
+  _count: { select: { reviews: true } },
 } as const;
 
 const productDetailSelect = {
@@ -192,12 +193,42 @@ export const adminProductsRouter = router({
     .query(async ({ ctx, input }) => {
       const product = await ctx.db.product.findUnique({
         where: { id: input.id },
-        select: productDetailSelect,
+        select: {
+          ...productDetailSelect,
+          reviews: {
+            select: {
+              id: true,
+              rating: true,
+              title: true,
+              body: true,
+              isApproved: true,
+              createdAt: true,
+              updatedAt: true,
+              user: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        },
       });
       if (!product) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Product not found." });
       }
-      return product;
+
+      const { reviews, ...rest } = product;
+      const count = reviews.length;
+      const pendingCount = reviews.filter((r) => !r.isApproved).length;
+      const average =
+        count > 0
+          ? reviews.reduce((sum, r) => sum + r.rating, 0) / count
+          : 0;
+
+      return {
+        ...rest,
+        reviews,
+        reviewStats: { count, average, pendingCount },
+      };
     }),
 
   create: adminProcedure

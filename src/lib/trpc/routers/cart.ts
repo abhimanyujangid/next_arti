@@ -115,7 +115,7 @@ export const cartRouter = router({
     return { items: [] as ReturnType<typeof mapCartItem>[] };
   }),
 
-  /** Merge: sum qty for shared products; keep server-only and client-only lines. */
+  /** Upsert cart lines from client. Shared products take max(qty), not sum (avoids double on re-hydrate). */
   replace: protectedProcedure
     .input(
       z.object({
@@ -125,24 +125,29 @@ export const cartRouter = router({
             qty: z.number().int().min(1),
           }),
         ),
+        mode: z.enum(["merge", "overwrite"]).optional().default("merge"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const cart = await getOrCreateCart(ctx.db, ctx.session.user.id);
-      const existing = await ctx.db.cartItem.findMany({
-        where: { cartId: cart.id },
-        select: { productId: true, qty: true },
-      });
-
       const qtyByProduct = new Map<string, number>();
-      for (const row of existing) {
-        qtyByProduct.set(row.productId, row.qty);
-      }
-      for (const item of input.items) {
-        qtyByProduct.set(
-          item.productId,
-          (qtyByProduct.get(item.productId) ?? 0) + item.qty,
-        );
+
+      if (input.mode === "merge") {
+        const existing = await ctx.db.cartItem.findMany({
+          where: { cartId: cart.id },
+          select: { productId: true, qty: true },
+        });
+        for (const row of existing) {
+          qtyByProduct.set(row.productId, row.qty);
+        }
+        for (const item of input.items) {
+          const prev = qtyByProduct.get(item.productId) ?? 0;
+          qtyByProduct.set(item.productId, Math.max(prev, item.qty));
+        }
+      } else {
+        for (const item of input.items) {
+          qtyByProduct.set(item.productId, item.qty);
+        }
       }
 
       const productIds = [...qtyByProduct.keys()];
