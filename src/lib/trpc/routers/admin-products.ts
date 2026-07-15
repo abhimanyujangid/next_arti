@@ -181,12 +181,31 @@ function normalizeProductData(input: z.infer<typeof productInputSchema>) {
 }
 
 export const adminProductsRouter = router({
-  list: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.product.findMany({
-      select: productListSelect,
-      orderBy: { updatedAt: "desc" },
-    });
-  }),
+  list: adminProcedure
+    .input(
+      z
+        .object({
+          page: z.number().int().min(1).default(1),
+          pageSize: z.number().int().min(1).max(100).default(20),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const page = input?.page ?? 1;
+      const pageSize = input?.pageSize ?? 20;
+
+      const [items, total] = await Promise.all([
+        ctx.db.product.findMany({
+          select: productListSelect,
+          orderBy: { updatedAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        ctx.db.product.count(),
+      ]);
+
+      return { items, total, page, pageSize };
+    }),
 
   getById: adminProcedure
     .input(z.object({ id: z.string().cuid() }))

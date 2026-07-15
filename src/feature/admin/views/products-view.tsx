@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Package, Pencil, Plus, Trash2 } from "lucide-react";
@@ -28,6 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+const PAGE_SIZE = 20;
 
 type ProductListRow = {
   id: string;
@@ -68,17 +70,36 @@ type ProductDetailRow = {
 
 export function ProductsView() {
   const utils = trpc.useUtils();
-  const { data: products = [], isLoading } = trpc.admin.products.list.useQuery();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = trpc.admin.products.list.useQuery({
+    page,
+    pageSize: PAGE_SIZE,
+  });
   const { data: categories = [] } = trpc.admin.categories.list.useQuery();
+
+  const products = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<ProductDetailRow | null>(null);
   const [deleting, setDeleting] = useState<ProductListRow | null>(null);
 
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
   const deleteMutation = trpc.admin.products.delete.useMutation({
     onSuccess: async () => {
       toast.success("Product deleted");
       setDeleting(null);
+      const remaining = total - 1;
+      const nextTotalPages = Math.max(1, Math.ceil(remaining / PAGE_SIZE));
+      if (page > nextTotalPages) {
+        setPage(nextTotalPages);
+      }
       await utils.admin.products.list.invalidate();
       await utils.catalog.listProducts.invalidate();
     },
@@ -170,7 +191,7 @@ export function ProductsView() {
             </div>
           ))}
         </div>
-      ) : products.length === 0 ? (
+      ) : total === 0 ? (
         <Empty className="border border-dashed border-[#e5e5e0] bg-white">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -189,90 +210,116 @@ export function ProductsView() {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="border border-[#e5e5e0] bg-white overflow-x-auto">
-          <div className="grid min-w-[800px] grid-cols-[72px_1fr_120px_80px_80px_120px_140px] gap-4 border-b border-[#e5e5e0] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[#707065]">
-            <span>Image</span>
-            <span>Title</span>
-            <span>Category</span>
-            <span>Stock</span>
-            <span>Reviews</span>
-            <span>Price</span>
-            <span className="text-right">Actions</span>
-          </div>
+        <div>
+          <div className="overflow-x-auto border border-[#e5e5e0] bg-white">
+            <div className="grid min-w-[800px] grid-cols-[72px_1fr_120px_80px_80px_120px_140px] gap-4 border-b border-[#e5e5e0] px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[#707065]">
+              <span>Image</span>
+              <span>Title</span>
+              <span>Category</span>
+              <span>Stock</span>
+              <span>Reviews</span>
+              <span>Price</span>
+              <span className="text-right">Actions</span>
+            </div>
 
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="grid min-w-[800px] grid-cols-[72px_1fr_120px_80px_80px_120px_140px] items-center gap-4 border-b border-[#e5e5e0] px-4 py-3 last:border-b-0"
-            >
-              <Link
-                href={`/admin/products/${product.id}`}
-                className="size-[56px] overflow-hidden border border-[#e5e5e0] bg-[#fafaf8]"
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="grid min-w-[800px] grid-cols-[72px_1fr_120px_80px_80px_120px_140px] items-center gap-4 border-b border-[#e5e5e0] px-4 py-3 last:border-b-0"
               >
-                {product.images[0]?.url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.images[0].url}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center text-[10px] text-[#a3a39a]">
-                    None
-                  </div>
-                )}
-              </Link>
-
-              <div className="min-w-0">
                 <Link
                   href={`/admin/products/${product.id}`}
-                  className="truncate font-medium text-[#1a1a1a] hover:text-accent"
+                  className="size-[56px] overflow-hidden border border-[#e5e5e0] bg-[#fafaf8]"
                 >
-                  {product.title}
+                  {product.images[0]?.url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.images[0].url}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-[10px] text-[#a3a39a]">
+                      None
+                    </div>
+                  )}
                 </Link>
-                <div className="truncate text-xs text-[#707065]">
-                  /{product.slug}
-                  {product.isFeatured ? " · Featured" : ""}
-                  {product.isBestSeller ? " · Best seller" : ""}
-                  {!product.isAvailable ? " · Unavailable" : ""}
+
+                <div className="min-w-0">
+                  <Link
+                    href={`/admin/products/${product.id}`}
+                    className="truncate font-medium text-[#1a1a1a] hover:text-accent"
+                  >
+                    {product.title}
+                  </Link>
+                  <div className="truncate text-xs text-[#707065]">
+                    /{product.slug}
+                    {product.isFeatured ? " · Featured" : ""}
+                    {product.isBestSeller ? " · Best seller" : ""}
+                    {!product.isAvailable ? " · Unavailable" : ""}
+                  </div>
+                </div>
+
+                <div className="truncate text-sm text-[#4a4a40]">
+                  {product.category?.name ?? "—"}
+                </div>
+                <div className="text-sm text-[#4a4a40]">{product.stock}</div>
+                <div className="text-sm text-[#4a4a40]">
+                  {product._count.reviews}
+                </div>
+                <div className="text-sm text-[#4a4a40]">
+                  {formatINR(product.priceDiscounted ?? product.priceOriginal)}
+                </div>
+
+                <div className="flex justify-end gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-none"
+                    onClick={() => void openEdit(product)}
+                    aria-label={`Edit ${product.title}`}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-none text-destructive hover:text-destructive"
+                    onClick={() => setDeleting(product)}
+                    aria-label={`Delete ${product.title}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="truncate text-sm text-[#4a4a40]">
-                {product.category?.name ?? "—"}
-              </div>
-              <div className="text-sm text-[#4a4a40]">{product.stock}</div>
-              <div className="text-sm text-[#4a4a40]">
-                {product._count.reviews}
-              </div>
-              <div className="text-sm text-[#4a4a40]">
-                {formatINR(product.priceDiscounted ?? product.priceOriginal)}
-              </div>
-
-              <div className="flex justify-end gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-none"
-                  onClick={() => void openEdit(product)}
-                  aria-label={`Edit ${product.title}`}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-none text-destructive hover:text-destructive"
-                  onClick={() => setDeleting(product)}
-                  aria-label={`Delete ${product.title}`}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
+          {totalPages > 1 ? (
+            <div className="mt-6 flex items-center justify-center gap-4 text-xs uppercase tracking-[0.22em] text-[#707065]">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                ← Prev
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Next →
+              </button>
             </div>
-          ))}
+          ) : null}
         </div>
       )}
 
