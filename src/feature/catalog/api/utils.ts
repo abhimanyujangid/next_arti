@@ -16,20 +16,86 @@ export type CatalogProductCard = {
   image_url: string | null;
 };
 
-export function mapCards(rows: any[]): CatalogProductCard[] {
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    title: r.title,
-    short_desc: r.shortDesc,
-    price_original: r.priceOriginal,
-    price_discounted: r.priceDiscounted,
-    region: r.region,
-    material: r.material,
-    is_available: r.isAvailable,
-    stock: r.stock,
-    category_slug: r.category?.slug ?? null,
-    category_name: r.category?.name ?? null,
-    image_url: r.images?.[0]?.url ?? null,
-  }));
+export type CatalogProductImage = {
+  url: string;
+  alt: string | null;
+  sortOrder: number;
+};
+
+export type CatalogProductDetail = CatalogProductCard & {
+  long_desc: string | null;
+  story: string | null;
+  dimensions: string | null;
+  sku: string | null;
+  weight_grams: number | null;
+  images: CatalogProductImage[];
+};
+
+type ProductCardRow = {
+  id: string;
+  slug: string;
+  title: string;
+  shortDesc: string | null;
+  priceOriginal: number;
+  priceDiscounted: number | null;
+  region: string | null;
+  material: string | null;
+  isAvailable: boolean;
+  stock: number;
+  category: { slug: string; name: string } | null;
+  images: { url: string; alt?: string | null; sortOrder?: number }[];
+};
+
+type ProductDetailRow = ProductCardRow & {
+  longDesc: string | null;
+  story: string | null;
+  dimensions: string | null;
+  sku: string | null;
+  weightGrams: number | null;
+  images: { url: string; alt: string | null; sortOrder: number }[];
+};
+
+export function mapCard(row: ProductCardRow): CatalogProductCard {
+  const sorted = [...row.images].sort(
+    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+  );
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    short_desc: row.shortDesc,
+    price_original: row.priceOriginal,
+    price_discounted: row.priceDiscounted,
+    region: row.region,
+    material: row.material,
+    is_available: row.isAvailable,
+    stock: row.stock,
+    category_slug: row.category?.slug ?? null,
+    category_name: row.category?.name ?? null,
+    image_url: sorted[0]?.url ?? null,
+  };
+}
+
+export function mapCards(rows: ProductCardRow[]): CatalogProductCard[] {
+  return rows.map(mapCard);
+}
+
+export function mapProductDetail(row: ProductDetailRow): CatalogProductDetail {
+  const images = [...row.images]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((img) => ({
+      url: img.url,
+      alt: img.alt,
+      sortOrder: img.sortOrder,
+    }));
+
+  return {
+    ...mapCard(row),
+    long_desc: row.longDesc,
+    story: row.story,
+    dimensions: row.dimensions,
+    sku: row.sku,
+    weight_grams: row.weightGrams,
+    images,
+  };
 }

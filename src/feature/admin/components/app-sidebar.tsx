@@ -9,6 +9,7 @@ import {
   Users,
   LogOut,
   Tags,
+  Package,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -54,6 +55,11 @@ const catalogNavigation = [
     title: "Categories",
     url: "/admin/categories",
     icon: Tags,
+  },
+  {
+    title: "Products",
+    url: "/admin/products",
+    icon: Package,
   },
 ];
 
