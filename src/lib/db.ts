@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 const connectionString = process.env.DATABASE_URL;
 
 /** Bump when Order/Address schema fields change so dev global cache is discarded. */
-const PRISMA_GLOBAL_KEY = "__artisun_prisma_v3__";
+const PRISMA_GLOBAL_KEY = "__artisun_prisma_v4__";
 
 const globalForPrisma = globalThis as unknown as {
   [PRISMA_GLOBAL_KEY]?: PrismaClient;

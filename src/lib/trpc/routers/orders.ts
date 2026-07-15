@@ -294,6 +294,14 @@ export const ordersRouter = router({
           items: {
             create: lineItems,
           },
+          paymentHistories: {
+            create: {
+              event: "initiated",
+              amount: total,
+              currency: "INR",
+              razorpayOrderId: rzOrder.id,
+            },
+          },
         },
         select: { id: true, orderNumber: true },
       });
@@ -306,6 +314,46 @@ export const ordersRouter = router({
         currency: "INR",
         keyId,
       };
+    }),
+
+  reportPaymentEvent: protectedProcedure
+    .input(
+      z.object({
+        orderId: z.string().cuid(),
+        event: z.enum(["failed", "cancelled"]),
+        razorpayPaymentId: z.string().min(1).optional().nullable(),
+        failureCode: z.string().max(100).optional().nullable(),
+        failureMessage: z.string().max(500).optional().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const order = await ctx.db.order.findFirst({
+        where: { id: input.orderId, userId: ctx.session.user.id },
+        select: {
+          id: true,
+          total: true,
+          currency: true,
+          razorpayOrderId: true,
+        },
+      });
+      if (!order) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
+      }
+
+      await ctx.db.paymentHistory.create({
+        data: {
+          orderId: order.id,
+          event: input.event,
+          amount: order.total,
+          currency: order.currency,
+          razorpayOrderId: order.razorpayOrderId,
+          razorpayPaymentId: input.razorpayPaymentId ?? null,
+          failureCode: input.failureCode ?? null,
+          failureMessage: input.failureMessage ?? null,
+        },
+      });
+
+      return { ok: true as const };
     }),
 
   verifyAndComplete: protectedProcedure
@@ -326,6 +374,8 @@ export const ordersRouter = router({
         select: {
           id: true,
           status: true,
+          total: true,
+          currency: true,
           razorpayOrderId: true,
           addressId: true,
           orderNumber: true,
@@ -348,6 +398,18 @@ export const ordersRouter = router({
       }
 
       if (order.razorpayOrderId !== input.razorpayOrderId) {
+        await ctx.db.paymentHistory.create({
+          data: {
+            orderId: order.id,
+            event: "failed",
+            amount: order.total,
+            currency: order.currency,
+            razorpayOrderId: input.razorpayOrderId,
+            razorpayPaymentId: input.razorpayPaymentId,
+            failureCode: "order_mismatch",
+            failureMessage: "Payment order mismatch.",
+          },
+        });
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Payment order mismatch.",
@@ -360,6 +422,18 @@ export const ordersRouter = router({
         razorpaySignature: input.razorpaySignature,
       });
       if (!valid) {
+        await ctx.db.paymentHistory.create({
+          data: {
+            orderId: order.id,
+            event: "failed",
+            amount: order.total,
+            currency: order.currency,
+            razorpayOrderId: input.razorpayOrderId,
+            razorpayPaymentId: input.razorpayPaymentId,
+            failureCode: "invalid_signature",
+            failureMessage: "Invalid payment signature.",
+          },
+        });
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Invalid payment signature.",
@@ -412,16 +486,28 @@ export const ordersRouter = router({
         });
       }
 
-      await ctx.db.order.update({
-        where: { id: order.id },
-        data: {
-          status: "paid",
-          addressId,
-          shippingAddress: snapshot,
-          razorpayPaymentId: input.razorpayPaymentId,
-          razorpaySignature: input.razorpaySignature,
-        },
-      });
+      await ctx.db.$transaction([
+        ctx.db.order.update({
+          where: { id: order.id },
+          data: {
+            status: "paid",
+            addressId,
+            shippingAddress: snapshot,
+            razorpayPaymentId: input.razorpayPaymentId,
+            razorpaySignature: input.razorpaySignature,
+          },
+        }),
+        ctx.db.paymentHistory.create({
+          data: {
+            orderId: order.id,
+            event: "success",
+            amount: order.total,
+            currency: order.currency,
+            razorpayOrderId: input.razorpayOrderId,
+            razorpayPaymentId: input.razorpayPaymentId,
+          },
+        }),
+      ]);
 
       await clearUserCart(ctx.db, userId);
 

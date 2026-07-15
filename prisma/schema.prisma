@@ -276,6 +276,7 @@ model Order {
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   address Address?     @relation(fields: [addressId], references: [id], onDelete: SetNull)
   items   OrderItem[]
+  paymentHistories PaymentHistory[]
 
   @@index([userId])
   @@index([status])
@@ -298,6 +299,25 @@ model OrderItem {
 
   @@index([orderId])
   @@map("order_items")
+}
+
+model PaymentHistory {
+  id                String   @id @default(cuid())
+  orderId           String
+  event             String // 'initiated' | 'success' | 'failed' | 'cancelled'
+  amount            Float
+  currency          String   @default("INR")
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  failureCode       String?
+  failureMessage    String?
+  createdAt         DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("payment_history")
 }
 
 model NewsletterSubscriber {

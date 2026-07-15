@@ -58,6 +58,7 @@ export function CheckoutView() {
 
   const createPayment = trpc.orders.createPaymentOrder.useMutation();
   const verifyPayment = trpc.orders.verifyAndComplete.useMutation();
+  const reportPayment = trpc.orders.reportPaymentEvent.useMutation();
 
   const canPay =
     cart.items.length > 0 &&
@@ -83,49 +84,79 @@ export function CheckoutView() {
         addressId: useNewAddress ? null : selectedAddressId,
       });
 
-      await openRazorpayCheckout({
-        key: payment.keyId,
-        amount: payment.amountPaise,
-        currency: payment.currency,
-        name: "ArtiSun",
-        description: `Order ${payment.orderNumber}`,
-        order_id: payment.razorpayOrderId,
-        prefill: {
-          name: user.name,
-          email: user.email,
-        },
-        theme: { color: "#1a1a1a" },
-        handler: async (response) => {
-          try {
-            const result = await verifyPayment.mutateAsync({
-              orderId: payment.orderId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature,
-              newAddress: useNewAddress ? draftAddress : null,
-              addressId: useNewAddress ? null : selectedAddressId,
-            });
-            cart.clear();
-            await utils.orders.myList.invalidate();
-            await utils.addresses.list.invalidate();
-            await utils.admin.orders.list.invalidate();
-            toast.success(`Order ${result.orderNumber} placed`);
-            router.push("/account/orders?placed=1");
-          } catch (error) {
-            toast.error(
-              error instanceof Error ? error.message : "Payment verification failed",
-            );
-          } finally {
-            setIsPaying(false);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setIsPaying(false);
-            toast.message("Payment cancelled");
+      let paymentSettled = false;
+
+      await openRazorpayCheckout(
+        {
+          key: payment.keyId,
+          amount: payment.amountPaise,
+          currency: payment.currency,
+          name: "ArtiSun",
+          description: `Order ${payment.orderNumber}`,
+          order_id: payment.razorpayOrderId,
+          prefill: {
+            name: user.name,
+            email: user.email,
+          },
+          theme: { color: "#1a1a1a" },
+          handler: async (response) => {
+            paymentSettled = true;
+            try {
+              const result = await verifyPayment.mutateAsync({
+                orderId: payment.orderId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+                newAddress: useNewAddress ? draftAddress : null,
+                addressId: useNewAddress ? null : selectedAddressId,
+              });
+              cart.clear();
+              await utils.orders.myList.invalidate();
+              await utils.addresses.list.invalidate();
+              await utils.admin.orders.list.invalidate();
+              toast.success(`Order ${result.orderNumber} placed`);
+              router.push("/account/orders?placed=1");
+            } catch (error) {
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Payment verification failed",
+              );
+            } finally {
+              setIsPaying(false);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              if (!paymentSettled) {
+                paymentSettled = true;
+                void reportPayment.mutateAsync({
+                  orderId: payment.orderId,
+                  event: "cancelled",
+                  failureMessage: "Checkout dismissed by user.",
+                });
+                toast.message("Payment cancelled");
+              }
+              setIsPaying(false);
+            },
           },
         },
-      });
+        (failure) => {
+          paymentSettled = true;
+          void reportPayment.mutateAsync({
+            orderId: payment.orderId,
+            event: "failed",
+            razorpayPaymentId: failure.error?.metadata?.payment_id ?? null,
+            failureCode: failure.error?.code ?? failure.error?.reason ?? null,
+            failureMessage:
+              failure.error?.description ?? "Payment failed at Razorpay.",
+          });
+          setIsPaying(false);
+          toast.error(
+            failure.error?.description ?? "Payment failed. Please try again.",
+          );
+        },
+      );
     } catch (error) {
       setIsPaying(false);
       toast.error(

@@ -64,6 +64,20 @@ const detailSelect = {
       qty: true,
     },
   },
+  paymentHistories: {
+    select: {
+      id: true,
+      event: true,
+      amount: true,
+      currency: true,
+      razorpayOrderId: true,
+      razorpayPaymentId: true,
+      failureCode: true,
+      failureMessage: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "asc" },
+  },
 } as const;
 
 export const adminOrdersRouter = router({

@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PaymentHistory } from "@/feature/admin/components/order/payment-history";
 
 const STATUSES = [
   "pending",
@@ -222,14 +223,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
         </div>
       </section>
 
-      {(data.razorpayOrderId || data.razorpayPaymentId) && (
-        <section className="text-xs text-[#707065]">
-          <div>Razorpay order: {data.razorpayOrderId ?? "—"}</div>
-          <div className="mt-1">
-            Payment: {data.razorpayPaymentId ?? "—"}
-          </div>
-        </section>
-      )}
+      <PaymentHistory items={data.paymentHistories ?? []} />
     </div>
   );
 }
