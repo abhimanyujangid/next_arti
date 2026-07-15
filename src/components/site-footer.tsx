@@ -13,7 +13,7 @@ export function SiteFooter() {
   }
 
   return (
-    <footer className="mt-24 border-t border-border/60 bg-secondary/40">
+    <footer className="border-t border-border/60 bg-secondary/40">
       <div className="mx-auto grid max-w-[1400px] gap-14 px-6 py-16 md:grid-cols-4 md:px-10">
         <div className="max-w-md md:col-span-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -77,6 +77,11 @@ export function SiteFooter() {
             <li>
               <Link href="/contact" className="hover:text-accent">
                 Contact
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" className="hover:text-accent">
+                FAQ
               </Link>
             </li>
             <li>

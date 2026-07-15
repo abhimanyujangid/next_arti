@@ -9,6 +9,7 @@ import {
   HomeBestsellersSkeleton,
   HomeFeaturedSkeleton,
 } from "@/feature/catalog/components/home-product-skeletons";
+import { FaqSection } from "@/feature/faq/components/faq-section";
 import heroImage from "@/assets/hero-pattachitra.jpg";
 import artisanImage from "@/assets/artisan-story.jpg";
 
@@ -99,32 +100,7 @@ export function HomeView() {
         <HomeBestsellers />
       </Suspense>
 
-      {/* FAQ / PROMISE STRIP */}
-      <section className="border-t border-border/60 bg-secondary/40">
-        <div className="mx-auto max-w-[1400px] px-6 md:px-10 py-16 grid gap-10 md:grid-cols-3 text-center">
-          <div>
-            <div className="eyebrow">Authenticated</div>
-            <div className="mt-3 font-display text-xl">Signed &amp; certified</div>
-            <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-              Every piece ships with a provenance card and the artisan&apos;s signature.
-            </p>
-          </div>
-          <div>
-            <div className="eyebrow">Museum packaging</div>
-            <div className="mt-3 font-display text-xl">Insured worldwide shipping</div>
-            <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-              Custom crating for fragile works. Free across India. Insured to your door abroad.
-            </p>
-          </div>
-          <div>
-            <div className="eyebrow">Concierge</div>
-            <div className="mt-3 font-display text-xl">Direct from the atelier</div>
-            <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-              A curator on hand for provenance questions, custom commissions and gifting.
-            </p>
-          </div>
-        </div>
-      </section>
+      <FaqSection />
     </>
   );
 }
