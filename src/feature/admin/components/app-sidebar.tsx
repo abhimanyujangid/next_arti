@@ -11,6 +11,7 @@ import {
   Tags,
   Package,
   MessageSquareQuote,
+  Mail,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +49,11 @@ const dashboardNavigation = [
     title: "Users",
     url: "/admin/users",
     icon: Users,
+  },
+  {
+    title: "Contacts",
+    url: "/admin/contacts",
+    icon: Mail,
   },
 ];
 

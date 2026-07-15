@@ -5,7 +5,7 @@ import { PrismaClient } from "@/generated/prisma";
 const connectionString = process.env.DATABASE_URL;
 
 /** Bump when Prisma schema models/fields change so Next loads a fresh client. */
-const PRISMA_GLOBAL_KEY = "__artisun_prisma_v7_runtime_utils__";
+const PRISMA_GLOBAL_KEY = "__artisun_prisma_v8_contact__";
 
 const globalForPrisma = globalThis as unknown as {
   [PRISMA_GLOBAL_KEY]?: PrismaClient;

@@ -5,6 +5,7 @@ import { adminReviewsRouter } from "./admin-reviews";
 import { adminUsersRouter } from "./admin-users";
 import { adminAnalyticsRouter } from "./admin-analytics";
 import { adminOrdersRouter } from "./admin-orders";
+import { adminContactsRouter } from "./admin-contacts";
 
 export const adminRouter = router({
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
@@ -25,4 +26,5 @@ export const adminRouter = router({
   users: adminUsersRouter,
   analytics: adminAnalyticsRouter,
   orders: adminOrdersRouter,
+  contacts: adminContactsRouter,
 });

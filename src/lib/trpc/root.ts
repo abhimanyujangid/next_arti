@@ -9,6 +9,7 @@ import { wishlistRouter } from './routers/wishlist';
 import { addressesRouter } from './routers/addresses';
 import { ordersRouter } from './routers/orders';
 import { newsletterRouter } from './routers/newsletter';
+import { contactRouter } from './routers/contact';
 
 export const appRouter = router({
   hello: publicProcedure.query(() => {
@@ -24,6 +25,7 @@ export const appRouter = router({
   addresses: addressesRouter,
   orders: ordersRouter,
   newsletter: newsletterRouter,
+  contact: contactRouter,
 });
 
 export type AppRouter = typeof appRouter;
