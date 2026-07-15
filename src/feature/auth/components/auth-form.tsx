@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useStore } from "@tanstack/react-form";
 import { useAuth } from "@/hooks/use-auth";
-import { signIn as betterSignIn } from "@/lib/auth-client";
 import { useAppForm } from "@/hooks/use-app-form";
-import { authErrorMessage } from "../utils/auth-error";
 import {
   signInFormOptions,
   authCredentialsSchema,
 } from "../utils/form-options";
-import { FieldGroup, FieldSeparator } from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
 export function AuthForm({ redirectPath }: { redirectPath: string }) {
@@ -75,17 +73,6 @@ export function AuthForm({ redirectPath }: { redirectPath: string }) {
 
   const isSubmitting = useStore(form.store, (s) => s.isSubmitting);
 
-  const handleGoogleSignIn = async () => {
-    setNotice(null);
-    const { error } = await betterSignIn.social({
-      provider: "google",
-      callbackURL: window.location.origin + redirectPath,
-    });
-    if (error) {
-      toast.error(authErrorMessage(error, "Google sign-in failed"));
-    }
-  };
-
   if (loading || user) {
     return (
       <div className="text-center">
@@ -109,23 +96,6 @@ export function AuthForm({ redirectPath }: { redirectPath: string }) {
           {notice}
         </div>
       )}
-
-      <Button
-        onClick={handleGoogleSignIn}
-        disabled={isSubmitting}
-        variant="outline"
-        className="flex w-full cursor-pointer items-center justify-center gap-3 py-6 text-xs uppercase tracking-[0.24em] transition-colors disabled:opacity-50"
-      >
-        <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-          <path
-            fill="currentColor"
-            d="M12 10.2v3.9h5.5c-.24 1.5-1.7 4.4-5.5 4.4-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.7 14.6 2.8 12 2.8 6.9 2.8 2.8 6.9 2.8 12S6.9 21.2 12 21.2c6.9 0 9.2-4.9 9.2-8.6 0-.6 0-1-.1-1.4H12z"
-          />
-        </svg>
-        Continue with Google
-      </Button>
-
-      <FieldSeparator className="my-6">or with email</FieldSeparator>
 
       <form.AppForm>
         <form
