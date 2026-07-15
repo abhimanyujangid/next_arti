@@ -1,6 +1,7 @@
 import { router, adminProcedure } from "../init";
 import { adminCategoriesRouter } from "./admin-categories";
 import { adminProductsRouter } from "./admin-products";
+import { adminReviewsRouter } from "./admin-reviews";
 
 export const adminRouter = router({
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
@@ -17,4 +18,5 @@ export const adminRouter = router({
   }),
   categories: adminCategoriesRouter,
   products: adminProductsRouter,
+  reviews: adminReviewsRouter,
 });

@@ -7,6 +7,7 @@ import superjson from "superjson";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { trpc } from "@/lib/trpc/client";
 import { AuthProvider } from "@/hooks/use-auth";
+import { CartWishlistSync } from "@/feature/cart/hooks/use-cart-wishlist-sync";
 
 export function Providers({
   children,
@@ -34,6 +35,7 @@ export function Providers({
       <QueryClientProvider client={queryClient}>
         <NuqsAdapter>
           <AuthProvider initialUser={initialUser} initialSession={initialSession}>
+            <CartWishlistSync />
             {children}
           </AuthProvider>
         </NuqsAdapter>

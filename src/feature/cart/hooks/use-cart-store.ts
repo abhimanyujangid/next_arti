@@ -21,6 +21,7 @@ function read(): CartItem[] {
     return [];
   }
 }
+
 function write(items: CartItem[]) {
   window.localStorage.setItem(KEY, JSON.stringify(items));
   listeners.forEach((l) => l());
@@ -28,11 +29,25 @@ function write(items: CartItem[]) {
 
 const subscribe = (cb: () => void) => {
   listeners.add(cb);
-  return () => listeners.delete(cb);
+  return () => {
+    listeners.delete(cb);
+  };
 };
 
+export function getCartSnapshot(): CartItem[] {
+  return read();
+}
+
+export function replaceCartItems(items: CartItem[]) {
+  write(items);
+}
+
 export function useCart() {
-  const items = useSyncExternalStore(subscribe, () => JSON.stringify(read()), () => "[]");
+  const items = useSyncExternalStore(
+    subscribe,
+    () => JSON.stringify(read()),
+    () => "[]",
+  );
   const parsed = JSON.parse(items) as CartItem[];
   return {
     items: parsed,
@@ -46,12 +61,16 @@ export function useCart() {
       write(cur);
     },
     setQty(product_id: string, qty: number) {
-      const cur = read().map((c) => c.product_id === product_id ? { ...c, qty: Math.max(1, qty) } : c);
+      const cur = read().map((c) =>
+        c.product_id === product_id ? { ...c, qty: Math.max(1, qty) } : c,
+      );
       write(cur);
     },
     remove(product_id: string) {
       write(read().filter((c) => c.product_id !== product_id));
     },
-    clear() { write([]); },
+    clear() {
+      write([]);
+    },
   };
 }

@@ -2,14 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Heart, Truck, ShieldCheck, RotateCcw, ZoomIn } from "lucide-react";
+import {
+  Heart,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  ZoomIn,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { formatINR, discountPct } from "@/lib/format";
 import { ProductCard } from "./product-card";
 import { ProductReviews } from "./product-reviews";
-import { useCart } from "@/feature/cart/hooks/use-cart-store";
-import { useWishlist } from "@/feature/account/hooks/use-wishlist-store";
+import { useSyncedCart } from "@/feature/cart/hooks/use-synced-cart";
+import { useSyncedWishlist } from "@/feature/account/hooks/use-synced-wishlist";
 import type {
   CatalogProductCard,
   CatalogProductDetail,
@@ -24,8 +32,8 @@ export function ProductDetails({
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoom, setZoom] = useState(false);
-  const cart = useCart();
-  const wish = useWishlist();
+  const cart = useSyncedCart();
+  const wish = useSyncedWishlist();
 
   const disc = discountPct(product.price_original, product.price_discounted);
   const images =
@@ -47,6 +55,28 @@ export function ProductDetails({
       qty: 1,
     });
     toast.success(`${product.title} added to cart`);
+  };
+
+  const cartLine = cart.items.find((i) => i.product_id === product.id);
+  const soldOut = product.stock === 0 || !product.is_available;
+
+  const decrementQty = () => {
+    if (!cartLine) return;
+    if (cartLine.qty <= 1) {
+      cart.remove(product.id);
+      toast.success("Removed from cart");
+      return;
+    }
+    cart.setQty(product.id, cartLine.qty - 1);
+  };
+
+  const incrementQty = () => {
+    if (!cartLine) return;
+    if (product.stock > 0 && cartLine.qty >= product.stock) {
+      toast.error("No more stock available");
+      return;
+    }
+    cart.setQty(product.id, cartLine.qty + 1);
   };
 
   const isWished = wish.has(product.id);
@@ -165,16 +195,45 @@ export function ProductDetails({
           <hr className="gold-rule my-8" />
 
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={addToCart}
-              disabled={product.stock === 0 || !product.is_available}
-              className="min-w-[200px] flex-1 bg-foreground px-6 py-4 text-xs uppercase tracking-[0.24em] text-background transition-colors hover:bg-accent hover:text-primary-foreground disabled:opacity-40"
-            >
-              {product.stock === 0 || !product.is_available
-                ? "Sold out"
-                : "Add to cart"}
-            </button>
+            {soldOut ? (
+              <button
+                type="button"
+                disabled
+                className="min-w-[200px] flex-1 bg-foreground px-6 py-4 text-xs uppercase tracking-[0.24em] text-background opacity-40"
+              >
+                Sold out
+              </button>
+            ) : cartLine ? (
+              <div className="flex min-w-[200px] flex-1 items-stretch border border-foreground">
+                <button
+                  type="button"
+                  onClick={decrementQty}
+                  aria-label="Decrease quantity"
+                  className="px-5 py-4 transition-colors hover:bg-secondary/60"
+                >
+                  <Minus className="size-4" />
+                </button>
+                <span className="flex flex-1 items-center justify-center text-sm tabular-nums tracking-[0.12em]">
+                  {cartLine.qty}
+                </span>
+                <button
+                  type="button"
+                  onClick={incrementQty}
+                  aria-label="Increase quantity"
+                  className="px-5 py-4 transition-colors hover:bg-secondary/60"
+                >
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={addToCart}
+                className="min-w-[200px] flex-1 bg-foreground px-6 py-4 text-xs uppercase tracking-[0.24em] text-background transition-colors hover:bg-accent hover:text-primary-foreground"
+              >
+                Add to cart
+              </button>
+            )}
             <button
               type="button"
               onClick={() =>

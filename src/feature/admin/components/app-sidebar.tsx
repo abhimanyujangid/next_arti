@@ -10,6 +10,7 @@ import {
   LogOut,
   Tags,
   Package,
+  MessageSquareQuote,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -60,6 +61,11 @@ const catalogNavigation = [
     title: "Products",
     url: "/admin/products",
     icon: Package,
+  },
+  {
+    title: "Reviews",
+    url: "/admin/reviews",
+    icon: MessageSquareQuote,
   },
 ];
 

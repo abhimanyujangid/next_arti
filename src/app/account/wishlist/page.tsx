@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { AccountNav } from "@/feature/account/components/account-layout";
-import { useWishlist } from "@/feature/account/hooks/use-wishlist-store";
-import { useCart } from "@/feature/cart/hooks/use-cart-store";
+import { useSyncedWishlist } from "@/feature/account/hooks/use-synced-wishlist";
+import { useSyncedCart } from "@/feature/cart/hooks/use-synced-cart";
 import { formatINR } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function WishlistPage() {
-  const wish = useWishlist();
-  const cart = useCart();
+  const wish = useSyncedWishlist();
+  const cart = useSyncedCart();
 
   return (
     <div className="mx-auto max-w-[1400px] px-6 md:px-10 py-16">

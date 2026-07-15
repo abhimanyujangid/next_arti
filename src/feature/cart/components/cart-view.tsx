@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/feature/cart/hooks/use-cart-store";
+import { useSyncedCart } from "@/feature/cart/hooks/use-synced-cart";
 import { formatINR } from "@/lib/format";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export function CartView() {
-  const cart = useCart();
+  const cart = useSyncedCart();
   const { user } = useAuth();
   const router = useRouter();
   const shipping = cart.subtotal > 0 ? 0 : 0; // free across India
