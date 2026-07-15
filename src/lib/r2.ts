@@ -15,6 +15,10 @@ export const r2Client = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
   },
+  // R2 rejects AWS SDK v3 default flexible checksums on presigned PUTs
+  // (URL gets x-amz-checksum-crc32=AAAAAA== which doesn't match the body).
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 function getPublicDomain(): string {
@@ -37,6 +41,12 @@ export async function createPresignedPutUrl(opts: {
   contentType: string;
   expiresIn?: number;
 }): Promise<string> {
+  if (!process.env.R2_ACCESS_KEY_ID?.trim() || !process.env.R2_SECRET_ACCESS_KEY?.trim()) {
+    throw new Error(
+      "R2 credentials missing. Set R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in .env",
+    );
+  }
+
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: opts.key,
