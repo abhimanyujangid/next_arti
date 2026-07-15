@@ -44,16 +44,6 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link href="/shop?category=wood-art" className="hover:text-accent">
-                Wood Art
-              </Link>
-            </li>
-            <li>
-              <Link href="/shop?category=metal-art" className="hover:text-accent">
-                Brass &amp; Bronze
-              </Link>
-            </li>
-            <li>
               <Link href="/collections" className="hover:text-accent">
                 Collections
               </Link>
