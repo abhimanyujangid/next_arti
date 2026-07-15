@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma";
 
 import { protectedProcedure, router } from "@/lib/trpc/init";
 import {
@@ -294,16 +294,18 @@ export const ordersRouter = router({
           items: {
             create: lineItems,
           },
-          paymentHistories: {
-            create: {
-              event: "initiated",
-              amount: total,
-              currency: "INR",
-              razorpayOrderId: rzOrder.id,
-            },
-          },
         },
         select: { id: true, orderNumber: true },
+      });
+
+      await ctx.db.paymentHistory.create({
+        data: {
+          orderId: order.id,
+          event: "initiated",
+          amount: total,
+          currency: "INR",
+          razorpayOrderId: rzOrder.id,
+        },
       });
 
       return {

@@ -1,11 +1,11 @@
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma";
 
 const connectionString = process.env.DATABASE_URL;
 
-/** Bump when Order/Address schema fields change so dev global cache is discarded. */
-const PRISMA_GLOBAL_KEY = "__artisun_prisma_v4__";
+/** Bump when Prisma schema models/fields change so Next loads a fresh client. */
+const PRISMA_GLOBAL_KEY = "__artisun_prisma_v7_runtime_utils__";
 
 const globalForPrisma = globalThis as unknown as {
   [PRISMA_GLOBAL_KEY]?: PrismaClient;
