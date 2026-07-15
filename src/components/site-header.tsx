@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Search, ShoppingBag, User, Heart, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useCart } from "@/feature/cart/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -18,6 +19,7 @@ const NAV = [
 
 export function SiteHeader() {
   const { user } = useAuth();
+  const { count } = useCart();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -101,8 +103,17 @@ export function SiteHeader() {
               <User className="h-4.5 w-4.5" strokeWidth={1.4} />
             </Link>
           )}
-          <Link href="/cart" aria-label="Cart" className="p-2 hover:text-accent transition-colors">
+          <Link
+            href="/cart"
+            aria-label={count > 0 ? `Cart, ${count} items` : "Cart"}
+            className="relative p-2 hover:text-accent transition-colors"
+          >
             <ShoppingBag className="h-4.5 w-4.5" strokeWidth={1.4} />
+            {count > 0 && (
+              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-medium leading-none text-accent-foreground">
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
           </Link>
         </div>
       </div>
