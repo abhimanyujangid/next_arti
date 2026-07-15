@@ -2,8 +2,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 
-import { publicProcedure, router } from "@/lib/trpc/init";
-import { mapCards, mapProductDetail } from "@/feature/catalog/api/utils";
+import { publicProcedure, protectedProcedure, router } from "@/lib/trpc/init";
+import {
+  mapCards,
+  mapProductDetail,
+  mapReview,
+} from "@/feature/catalog/api/utils";
 
 const listProductsInput = z.object({
   category: z.string().trim().optional(),
@@ -21,12 +25,23 @@ const listProductsInput = z.object({
   bestSeller: z.boolean().optional(),
 });
 
+const reviewWriteInput = z.object({
+  productId: z.string().cuid(),
+  rating: z.number().int().min(1).max(5),
+  title: z.string().trim().min(2).max(120),
+  body: z.string().trim().min(10).max(2000),
+});
+
 const cardInclude = {
   category: { select: { slug: true, name: true } },
   images: {
     select: { url: true, alt: true, sortOrder: true },
     orderBy: { sortOrder: "asc" as const },
   },
+} as const;
+
+const reviewInclude = {
+  user: { select: { name: true } },
 } as const;
 
 export const catalogRouter = router({
@@ -87,8 +102,6 @@ export const catalogRouter = router({
       }
 
       if (minPrice != null || maxPrice != null) {
-        // Filter on effective price: discounted if present, else original
-        // Prisma can't express coalesce easily — fetch candidates via both fields with OR ranges
         const priceFilters: Prisma.ProductWhereInput[] = [];
         if (minPrice != null && maxPrice != null) {
           priceFilters.push(
@@ -136,7 +149,14 @@ export const catalogRouter = router({
             },
           );
         }
-        where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), { OR: priceFilters }];
+        where.AND = [
+          ...(Array.isArray(where.AND)
+            ? where.AND
+            : where.AND
+              ? [where.AND]
+              : []),
+          { OR: priceFilters },
+        ];
       }
 
       let orderBy: Prisma.ProductOrderByWithRelationInput;
@@ -209,5 +229,113 @@ export const catalogRouter = router({
         product: mapProductDetail(product),
         related: mapCards(relatedRows),
       };
+    }),
+
+  listReviews: publicProcedure
+    .input(z.object({ productId: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      const product = await ctx.db.product.findUnique({
+        where: { id: input.productId },
+        select: { id: true },
+      });
+      if (!product) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Product not found." });
+      }
+
+      const rows = await ctx.db.productReview.findMany({
+        where: { productId: input.productId, isApproved: true },
+        include: reviewInclude,
+        orderBy: { createdAt: "desc" },
+      });
+
+      const items = rows.map(mapReview);
+      const count = items.length;
+      const average =
+        count > 0
+          ? items.reduce((sum, r) => sum + r.rating, 0) / count
+          : 0;
+
+      const userId = ctx.session?.user?.id;
+      let myReview = null as ReturnType<typeof mapReview> | null;
+      if (userId) {
+        const mine = await ctx.db.productReview.findUnique({
+          where: {
+            productId_userId: {
+              productId: input.productId,
+              userId,
+            },
+          },
+          include: reviewInclude,
+        });
+        if (mine) {
+          myReview = mapReview(mine);
+        }
+      }
+
+      return { items, average, count, myReview };
+    }),
+
+  upsertReview: protectedProcedure
+    .input(reviewWriteInput)
+    .mutation(async ({ ctx, input }) => {
+      const product = await ctx.db.product.findUnique({
+        where: { id: input.productId },
+        select: { id: true },
+      });
+      if (!product) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Product not found." });
+      }
+
+      const userId = ctx.session.user.id;
+      const row = await ctx.db.productReview.upsert({
+        where: {
+          productId_userId: {
+            productId: input.productId,
+            userId,
+          },
+        },
+        create: {
+          productId: input.productId,
+          userId,
+          rating: input.rating,
+          title: input.title,
+          body: input.body,
+          isApproved: true,
+        },
+        update: {
+          rating: input.rating,
+          title: input.title,
+          body: input.body,
+          isApproved: true,
+        },
+        include: reviewInclude,
+      });
+
+      return mapReview(row);
+    }),
+
+  deleteMyReview: protectedProcedure
+    .input(z.object({ productId: z.string().cuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const existing = await ctx.db.productReview.findUnique({
+        where: {
+          productId_userId: {
+            productId: input.productId,
+            userId,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Review not found.",
+        });
+      }
+
+      await ctx.db.productReview.delete({ where: { id: existing.id } });
+      return { ok: true as const };
     }),
 });

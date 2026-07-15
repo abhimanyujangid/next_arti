@@ -31,6 +31,38 @@ export type CatalogProductDetail = CatalogProductCard & {
   images: CatalogProductImage[];
 };
 
+export type CatalogReview = {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  author_name: string;
+  created_at: string;
+  user_id: string;
+};
+
+type ReviewRow = {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  createdAt: Date;
+  userId: string;
+  user: { name: string };
+};
+
+export function mapReview(row: ReviewRow): CatalogReview {
+  return {
+    id: row.id,
+    rating: row.rating,
+    title: row.title,
+    body: row.body,
+    author_name: row.user.name,
+    created_at: row.createdAt.toISOString(),
+    user_id: row.userId,
+  };
+}
+
 type ProductCardRow = {
   id: string;
   slug: string;

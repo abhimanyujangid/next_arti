@@ -1,23 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-interface ReviewItem {
-  id: string;
-  rating: number;
-  title: string | null;
-  body: string | null;
-  author_name: string;
-  created_at: string;
-}
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc/client";
 
 function Stars({ value, size = 14 }: { value: number; size?: number }) {
   return (
-    <div className="inline-flex items-center gap-0.5 text-accent" aria-label={`${value} out of 5`}>
+    <div
+      className="inline-flex items-center gap-0.5 text-accent"
+      aria-label={`${value} out of 5`}
+    >
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
@@ -32,95 +29,138 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 
 export function ProductReviews({ productId }: { productId: string }) {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.catalog.listReviews.useQuery({ productId });
+
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
-  // In-memory mock reviews state
-  const [reviews, setReviews] = useState<ReviewItem[]>([
-    {
-      id: "rev-1",
-      rating: 5,
-      title: "Absolutely breathtaking craftsmanship",
-      body: "I was hesitant about shipping such a delicate work, but the museum packaging was immaculate. The painting itself is a masterpiece. The details of the gold leaf work are even more vibrant in person.",
-      author_name: "Aravind Swamy",
-      created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  const myReview = data?.myReview ?? null;
+
+  useEffect(() => {
+    if (myReview) {
+      setRating(myReview.rating);
+      setTitle(myReview.title ?? "");
+      setBody(myReview.body ?? "");
+    } else {
+      setRating(5);
+      setTitle("");
+      setBody("");
+    }
+  }, [myReview]);
+
+  const upsertMutation = trpc.catalog.upsertReview.useMutation({
+    onSuccess: async () => {
+      toast.success(
+        myReview ? "Review updated" : "Thank you for your review",
+      );
+      await utils.catalog.listReviews.invalidate({ productId });
     },
-    {
-      id: "rev-2",
-      rating: 4,
-      title: "Beautiful addition to our living room",
-      body: "Stunning colors and details. It carries a heavy presence of ancient heritage. Highly recommended concierge service too, they helped answer all my questions.",
-      author_name: "Meera Sen",
-      created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    onError: (error) => toast.error(error.message),
+  });
+
+  const deleteMutation = trpc.catalog.deleteMyReview.useMutation({
+    onSuccess: async () => {
+      toast.success("Review removed");
+      setRating(5);
+      setTitle("");
+      setBody("");
+      await utils.catalog.listReviews.invalidate({ productId });
     },
-  ]);
+    onError: (error) => toast.error(error.message),
+  });
 
   const submitReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
-
-    const newReview: ReviewItem = {
-      id: `mock-rev-${Date.now()}`,
+    upsertMutation.mutate({
+      productId,
       rating,
-      title,
-      body,
-      author_name: user?.name || "Collector",
-      created_at: new Date().toISOString(),
-    };
-
-    setReviews([newReview, ...reviews]);
-    toast.success("Thank you for your review");
-    setTitle("");
-    setBody("");
+      title: title.trim(),
+      body: body.trim(),
+    });
   };
 
   const removeMyReview = () => {
-    setReviews(reviews.filter((r) => !r.id.startsWith("mock-rev-")));
-    toast.success("Review removed");
+    deleteMutation.mutate({ productId });
   };
 
-  const count = reviews.length;
-  const average = count > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+  const reviews = data?.items ?? [];
+  const count = data?.count ?? 0;
+  const average = data?.average ?? 0;
+  const isSaving = upsertMutation.isPending || deleteMutation.isPending;
+
+  const authHref = `/auth?redirect=${encodeURIComponent(pathname)}`;
 
   return (
     <section className="mt-24">
       <div className="eyebrow">Collector reviews</div>
       <div className="mt-3 flex flex-wrap items-baseline gap-4">
         <h2 className="font-display text-3xl md:text-4xl">
-          {count === 0 ? "Be the first to review" : `${average.toFixed(1)} · ${count} review${count === 1 ? "" : "s"}`}
+          {isLoading
+            ? "Loading reviews…"
+            : count === 0
+              ? "Be the first to review"
+              : `${average.toFixed(1)} · ${count} review${count === 1 ? "" : "s"}`}
         </h2>
-        {count > 0 && <Stars value={average} size={18} />}
+        {!isLoading && count > 0 && <Stars value={average} size={18} />}
       </div>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-8">
-          {count === 0 && (
-            <p className="text-muted-foreground">No reviews yet. Yours would grace this page beautifully.</p>
+          {isLoading ? (
+            <p className="text-muted-foreground">Loading reviews…</p>
+          ) : count === 0 ? (
+            <p className="text-muted-foreground">
+              No reviews yet. Yours would grace this page beautifully.
+            </p>
+          ) : (
+            reviews.map((r) => (
+              <article key={r.id} className="border-b border-border/60 pb-8">
+                <div className="flex items-center gap-3">
+                  <Stars value={r.rating} />
+                  <span className="eyebrow">
+                    {new Date(r.created_at).toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+                {r.title && (
+                  <h3 className="mt-3 font-display text-xl">{r.title}</h3>
+                )}
+                {r.body && (
+                  <p className="mt-2 whitespace-pre-line leading-relaxed text-foreground/85">
+                    {r.body}
+                  </p>
+                )}
+                <div className="mt-3 text-sm text-muted-foreground">
+                  — {r.author_name}
+                </div>
+              </article>
+            ))
           )}
-          {reviews.map((r) => (
-            <article key={r.id} className="border-b border-border/60 pb-8">
-              <div className="flex items-center gap-3">
-                <Stars value={r.rating} />
-                <span className="eyebrow">{new Date(r.created_at).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}</span>
-              </div>
-              {r.title && <h3 className="mt-3 font-display text-xl">{r.title}</h3>}
-              {r.body && <p className="mt-2 text-foreground/85 leading-relaxed whitespace-pre-line">{r.body}</p>}
-              <div className="mt-3 text-sm text-muted-foreground">— {r.author_name}</div>
-            </article>
-          ))}
         </div>
 
         <aside className="bg-secondary/40 p-8 text-sm">
           <div className="eyebrow">Share your impressions</div>
           {!user ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              <Link href="/auth" className="text-accent underline underline-offset-4">Sign in</Link> to leave a review.
+              <Link
+                href={authHref}
+                className="text-accent underline underline-offset-4"
+              >
+                Sign in
+              </Link>{" "}
+              to leave a review.
             </p>
           ) : (
             <form onSubmit={submitReview} className="mt-4 space-y-4">
               <div>
-                <label className="eyebrow block mb-2">Rating</label>
+                <label className="eyebrow mb-2 block">Rating</label>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -129,47 +169,64 @@ export function ProductReviews({ productId }: { productId: string }) {
                       onClick={() => setRating(n)}
                       className="p-1 text-accent"
                       aria-label={`Rate ${n}`}
+                      disabled={isSaving}
                     >
-                      <Star className={"h-6 w-6 " + (n <= rating ? "fill-current" : "opacity-30")} strokeWidth={1.2} />
+                      <Star
+                        className={
+                          "h-6 w-6 " + (n <= rating ? "fill-current" : "opacity-30")
+                        }
+                        strokeWidth={1.2}
+                      />
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="eyebrow block mb-2">Headline</label>
+                <label className="eyebrow mb-2 block">Headline</label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={120}
-                  className="w-full bg-background border border-border px-3 py-2 focus:outline-none focus:border-accent"
+                  className="w-full border border-border bg-background px-3 py-2 focus:border-accent focus:outline-none"
                   required
+                  disabled={isSaving}
                 />
               </div>
               <div>
-                <label className="eyebrow block mb-2">Your review</label>
+                <label className="eyebrow mb-2 block">Your review</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   rows={5}
                   maxLength={2000}
-                  className="w-full bg-background border border-border px-3 py-2 focus:outline-none focus:border-accent resize-none"
+                  className="w-full resize-none border border-border bg-background px-3 py-2 focus:border-accent focus:outline-none"
                   required
+                  minLength={10}
+                  disabled={isSaving}
                 />
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
                   type="submit"
-                  className="bg-foreground text-background px-5 py-3 text-xs uppercase tracking-[0.24em] hover:bg-accent hover:text-primary-foreground transition-colors"
+                  disabled={isSaving}
+                  className="bg-foreground px-5 py-3 text-xs uppercase tracking-[0.24em] text-background transition-colors hover:bg-accent hover:text-primary-foreground disabled:opacity-50"
                 >
-                  Submit review
+                  {upsertMutation.isPending
+                    ? "Saving…"
+                    : myReview
+                      ? "Update review"
+                      : "Submit review"}
                 </button>
-                <button
-                  type="button"
-                  onClick={removeMyReview}
-                  className="text-xs uppercase tracking-[0.24em] text-muted-foreground hover:text-accent transition-colors"
-                >
-                  Remove mine
-                </button>
+                {myReview && (
+                  <button
+                    type="button"
+                    onClick={removeMyReview}
+                    disabled={isSaving}
+                    className="text-xs uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:text-accent disabled:opacity-50"
+                  >
+                    {deleteMutation.isPending ? "Removing…" : "Remove mine"}
+                  </button>
+                )}
               </div>
             </form>
           )}
