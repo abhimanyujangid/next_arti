@@ -4,7 +4,7 @@ import { z } from "zod";
 import { adminProcedure, router } from "@/lib/trpc/init";
 import { createPresignedPutUrl, getPublicUrl } from "@/lib/r2";
 
-const ALLOWED_FOLDERS = ["categories", "products"] as const;
+const ALLOWED_FOLDERS = ["categories", "products", "journal"] as const;
 const ALLOWED_CONTENT_TYPES = [
   "image/jpeg",
   "image/png",

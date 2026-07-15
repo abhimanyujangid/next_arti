@@ -300,7 +300,18 @@ export function ProductDetails({
             )}
           </dl>
 
-          <div className="mt-10 space-y-3 text-sm text-muted-foreground">
+          <div className="mt-10">
+            <div className="eyebrow">Shipping &amp; Returns</div>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+              <span className="text-foreground/85">Delivery Time:</span> The
+              minimum delivery time is 2 months from the date of order
+              confirmation and payment. Actual delivery may vary depending on
+              artisan availability, artwork complexity, and shipping
+              destination.
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-3">
               <Truck className="h-4 w-4 text-accent" /> Complimentary insured
               shipping across India

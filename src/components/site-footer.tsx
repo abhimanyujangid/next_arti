@@ -16,7 +16,12 @@ export function SiteFooter() {
     <footer className="mt-24 border-t border-border/60 bg-secondary/40">
       <div className="mx-auto grid max-w-[1400px] gap-14 px-6 py-16 md:grid-cols-4 md:px-10">
         <div className="max-w-md md:col-span-2">
-          <div className="mb-3 font-display text-3xl">ArtiSun</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logo.png"
+            alt="ArtiSun — Global Ethnic Art & Craft"
+            className="mb-4 h-16 w-auto object-contain"
+          />
           <p className="text-sm leading-relaxed text-muted-foreground">
             Collectible handmade art and heirloom objects from the workshops of
             India. Every piece is one of one — signed, story-carried and shipped
@@ -62,6 +67,11 @@ export function SiteFooter() {
             <li>
               <Link href="/about" className="hover:text-accent">
                 Our Craft
+              </Link>
+            </li>
+            <li>
+              <Link href="/journal" className="hover:text-accent">
+                Journal
               </Link>
             </li>
             <li>

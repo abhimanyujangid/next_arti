@@ -12,6 +12,7 @@ import {
   Package,
   MessageSquareQuote,
   Mail,
+  BookOpen,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -67,6 +68,11 @@ const catalogNavigation = [
     title: "Products",
     url: "/admin/products",
     icon: Package,
+  },
+  {
+    title: "Journal",
+    url: "/admin/journal",
+    icon: BookOpen,
   },
   {
     title: "Reviews",

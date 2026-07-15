@@ -11,8 +11,12 @@ export function LeaderCard({ role, name, quote, image }: LeaderCardProps) {
     <div className="flex flex-col sm:flex-row gap-8 items-start">
       <div className="shrink-0">
         {image ? (
-          <div className="h-40 w-40 overflow-hidden border border-border/60">
-            <img src={image} alt={name} className="h-full w-full object-cover" />
+          <div className="h-48 w-40 overflow-hidden border border-border/60 sm:h-56 sm:w-44">
+            <img
+              src={image}
+              alt={name}
+              className="h-full w-full object-cover object-top"
+            />
           </div>
         ) : (
           <div className="h-40 w-40 flex items-center justify-center border border-border/60 bg-secondary/40 font-display text-4xl text-accent">

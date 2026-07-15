@@ -1,4 +1,3 @@
-import artisanImage from "@/assets/artisan-story.jpg";
 import preservingImage from "@/assets/product-madhubani.jpg";
 import visionImage from "@/assets/product-tanjore.jpg";
 
@@ -92,7 +91,7 @@ export const leaders = [
     role: "Managing Partner",
     name: "Prashanth Bose",
     quote: "We assure guaranteed quality in every name and creation that comes to you.",
-    image: artisanImage.src,
+    image: "/images/manager_1.png",
   },
   {
     role: "Managing Director",
