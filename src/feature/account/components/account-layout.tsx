@@ -31,7 +31,9 @@ export function AccountNav({ isAdmin }: { isAdmin: boolean }) {
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive =
+    pathname === href ||
+    (href !== "/account" && pathname.startsWith(`${href}/`));
   return (
     <Link
       href={href}

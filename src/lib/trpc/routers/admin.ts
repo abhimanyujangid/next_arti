@@ -4,12 +4,13 @@ import { adminProductsRouter } from "./admin-products";
 import { adminReviewsRouter } from "./admin-reviews";
 import { adminUsersRouter } from "./admin-users";
 import { adminAnalyticsRouter } from "./admin-analytics";
+import { adminOrdersRouter } from "./admin-orders";
 
 export const adminRouter = router({
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
     const [totalUsers, totalOrders] = await Promise.all([
       ctx.db.user.count(),
-      ctx.db.order.count(),
+      ctx.db.order.count({ where: { status: { not: "pending" } } }),
     ]);
 
     return {
@@ -23,4 +24,5 @@ export const adminRouter = router({
   reviews: adminReviewsRouter,
   users: adminUsersRouter,
   analytics: adminAnalyticsRouter,
+  orders: adminOrdersRouter,
 });

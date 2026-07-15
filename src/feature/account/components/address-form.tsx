@@ -12,10 +12,14 @@ export function AddressForm({
   onSave,
   onCancel,
   isPending,
+  submitLabel = "Save address",
+  hideCancel = false,
 }: {
   onSave: (data: AddressFormValues) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   isPending?: boolean;
+  submitLabel?: string;
+  hideCancel?: boolean;
 }) {
   const {
     register,
@@ -131,20 +135,22 @@ export function AddressForm({
         <span>Make default</span>
       </label>
       <div className="mt-4 flex justify-end gap-3 md:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isPending}
-          className="cursor-pointer text-xs uppercase tracking-[0.22em] text-muted-foreground hover:text-accent disabled:opacity-50"
-        >
-          Cancel
-        </button>
+        {!hideCancel && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isPending}
+            className="cursor-pointer text-xs uppercase tracking-[0.22em] text-muted-foreground hover:text-accent disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        )}
         <button
           type="submit"
           disabled={isPending}
           className="cursor-pointer bg-foreground px-6 py-3 text-xs uppercase tracking-[0.22em] text-background hover:bg-accent disabled:opacity-50"
         >
-          {isPending ? "Saving…" : "Save address"}
+          {isPending ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>
